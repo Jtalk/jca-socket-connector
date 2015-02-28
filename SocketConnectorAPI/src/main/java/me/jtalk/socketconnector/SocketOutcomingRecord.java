@@ -21,5 +21,5 @@ import javax.resource.cci.Record;
 
 public interface SocketOutcomingRecord extends Record {
 
-	void setData(byte[] data);
+	byte[] getData();
 }
