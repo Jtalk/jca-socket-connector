@@ -21,6 +21,5 @@ import javax.resource.cci.RecordFactory;
 
 public interface SocketRecordFactory extends RecordFactory {
 
-	SocketIncomingRecord createIncomngRecord();
 	SocketOutcomingRecord createOutcomingRecord();
 }
