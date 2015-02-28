@@ -31,6 +31,8 @@ import javax.resource.spi.ConnectionManager;
 import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
+import javax.resource.spi.ResourceAdapter;
+import javax.resource.spi.ResourceAdapterAssociation;
 import javax.resource.spi.ValidatingManagedConnectionFactory;
 import javax.security.auth.Subject;
 
@@ -40,7 +42,7 @@ import javax.security.auth.Subject;
 	connectionFactory = ConnectionFactory.class,
 	connectionFactoryImpl = SocketConnectionFactory.class
 )
-public class ManagedSocketConnectionFactory implements ManagedConnectionFactory, ValidatingManagedConnectionFactory {
+public class ManagedSocketConnectionFactory implements ManagedConnectionFactory, ValidatingManagedConnectionFactory, ResourceAdapterAssociation {
 
 	static final Metadata METADATA = new Metadata();
 
@@ -120,5 +122,32 @@ public class ManagedSocketConnectionFactory implements ManagedConnectionFactory,
 		if (writer != null) {
 			writer.println(message);
 		}
+	}
+
+	@Override
+	public ResourceAdapter getResourceAdapter() {
+		return this.adapter.get();
+	}
+
+	@Override
+	public void setResourceAdapter(ResourceAdapter ra) throws ResourceException {
+		if (!(ra instanceof SocketResourceAdapter)) {
+			throw new ResourceException("Resource adapter supplied to ManagedSocketConnectionFactory is not a SocketResourceAdapter");
+		}
+		SocketResourceAdapter newAdapter = (SocketResourceAdapter)ra;
+		if (!this.adapter.compareAndSet(null, newAdapter)) {
+			throw new javax.resource.spi.IllegalStateException("Resource adapter is applied more than once");
+		}
+		newAdapter.registerConnectionFactory(this);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return super.equals(obj); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode(); //To change body of generated methods, choose Tools | Templates.
 	}
 }
