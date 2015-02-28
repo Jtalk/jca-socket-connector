@@ -1,3 +1,4 @@
 syntax: glob
 SocketConnectorJAR/target/*
 SocketConnectorRAR/target/*
+SocketConnectorAPI/target/*
