@@ -34,6 +34,8 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionMetaData;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
+import javax.validation.ConstraintViolation;
+import javax.validation.groups.Default;
 
 public class ManagedSocketConnectionProxy implements ManagedConnection {
 
@@ -41,7 +43,7 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 	private final SocketResourceAdapter adapter;
 	private final SocketConnectionRequestInfo info;
 
-	private AtomicReference<PrintWriter> logWriter = new AtomicReference<>(null);
+	private final AtomicReference<PrintWriter> logWriter = new AtomicReference<>(null);
 
 	private final AtomicReference<SocketConnection> connection = new AtomicReference<>(null);
 	private final Set<ConnectionEventListener> eventListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -49,10 +51,13 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 	private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
 	ManagedSocketConnectionProxy(long id, SocketResourceAdapter adapter, SocketConnectionRequestInfo info) throws ResourceException {
+
 		this.ID = id;
 		this.adapter = adapter;
 		this.info = info;
 		this.isRunning.set(true);
+
+		this.validateInfo(info);
 	}
 
 	@Override
@@ -134,6 +139,13 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 		return this.logWriter.get();
 	}
 
+	public void log(String message) {
+		PrintWriter writer = this.logWriter.get();
+		if (writer != null) {
+			writer.print(message);
+		}
+	}
+
 	private void replaceActiveConnection(SocketConnection newConnection) {
 
 		SocketConnection old = this.connection.getAndSet(newConnection);
@@ -146,5 +158,19 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 		for (ConnectionEventListener listener : this.eventListeners) {
 			method.accept(listener, event);
 		}
+	}
+
+	private void validateInfo(SocketConnectionRequestInfo info) throws ResourceException {
+		Set<ConstraintViolation<SocketConnectionRequestInfo>> violations = this.adapter.getValidator().validate(info, Default.class);
+		if (violations.isEmpty()) {
+			return;
+		}
+
+		for (ConstraintViolation<SocketConnectionRequestInfo> violation : violations) {
+			String message = violation.getMessage();
+			this.log(message);
+		}
+
+		throw new ResourceException("Socket connection request info constraints violation failed");
 	}
 }
