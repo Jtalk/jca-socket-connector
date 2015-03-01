@@ -57,7 +57,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		this.validateInfo(info);
 
-		this.ID = adapter.createConnection(info);
+		this.ID = adapter.createTCPConnection(info.createInetAddress());
 		this.isRunning.set(true);
 	}
 
@@ -69,12 +69,12 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		this.cleanup();
 		this.isRunning.set(false);
-		this.adapter.closeConnection(this.ID);
+		this.adapter.closeTCPConnection(this.ID);
 		this.notifyEvent(new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED), ConnectionEventListener::connectionClosed);
 	}
 
 	public void send(byte[] data) {
-		this.adapter.send(this.ID, data);
+		this.adapter.sendTCP(this.ID, data);
 	}
 
 	@Override
@@ -86,7 +86,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		this.checkInfo(cxRequestInfo);
 
-		TCPConnection conn = new TCPConnectionImpl(this);
+		TCPConnectionImpl conn = new TCPConnectionImpl(this);
 		this.replaceActiveConnection(conn);
 
 		return conn;

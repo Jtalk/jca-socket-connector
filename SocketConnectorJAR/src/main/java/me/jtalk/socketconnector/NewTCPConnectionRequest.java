@@ -48,6 +48,10 @@ class NewTCPConnectionRequest implements ConnectionRequestInfo {
 		return port;
 	}
 
+	public InetSocketAddress createInetAddress() {
+		return new InetSocketAddress(this.address, this.port);
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {

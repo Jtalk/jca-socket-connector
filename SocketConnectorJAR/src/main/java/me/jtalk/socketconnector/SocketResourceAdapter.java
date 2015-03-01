@@ -17,10 +17,11 @@
 
 package me.jtalk.socketconnector;
 
+import java.net.InetSocketAddress;
+import javax.annotation.Resource;
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
-import javax.resource.spi.ConnectionManager;
 import javax.resource.spi.Connector;
 import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
@@ -28,6 +29,7 @@ import javax.resource.spi.TransactionSupport;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
+import javax.validation.Validator;
 
 @Connector(
 	displayName = Metadata.NAME,
@@ -40,6 +42,9 @@ import javax.transaction.xa.XAResource;
 public class SocketResourceAdapter implements ResourceAdapter {
 
 	private WorkManager workManager;
+
+	@Resource
+	Validator validator;
 
 	@Override
 	public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
@@ -64,6 +69,22 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	@Override
 	public XAResource[] getXAResources(ActivationSpec[] specs) throws ResourceException {
 		return null;
+	}
+
+	Validator getValidator() {
+		return this.validator;
+	}
+
+	long createTCPConnection(InetSocketAddress target) {
+		return this.tcpManager.connect(target);
+	}
+
+	void sendTCP(long id, byte[] data) {
+		this.tcpManager.send(id, data);
+	}
+
+	void closeTCPConnection(long id) {
+		this.tcpManager.close(id);
 	}
 
 	@Override
