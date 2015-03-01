@@ -18,6 +18,7 @@
 package me.jtalk.socketconnector;
 
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,7 +74,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		this.notifyEvent(new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED), ConnectionEventListener::connectionClosed);
 	}
 
-	public void send(byte[] data) {
+	public void send(ByteBuffer data) {
 		this.adapter.sendTCP(this.ID, data);
 	}
 

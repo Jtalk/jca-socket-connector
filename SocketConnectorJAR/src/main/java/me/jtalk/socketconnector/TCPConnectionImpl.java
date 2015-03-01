@@ -17,6 +17,7 @@
 
 package me.jtalk.socketconnector;
 
+import java.nio.ByteBuffer;
 import javax.resource.ResourceException;
 
 public class TCPConnectionImpl implements TCPConnection {
@@ -37,7 +38,7 @@ public class TCPConnectionImpl implements TCPConnection {
 	}
 
 	@Override
-	public void send(byte[] message) throws ResourceException {
+	public void send(ByteBuffer message) throws ResourceException {
 		ManagedTCPConnectionProxy local = this.owner;
 		if (local == null) {
 			throw new ResourceException("Connection is detached");

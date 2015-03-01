@@ -17,11 +17,12 @@
 
 package me.jtalk.socketconnector;
 
+import java.nio.ByteBuffer;
 import javax.resource.ResourceException;
 
 public interface TCPConnection {
 
 	long getId() throws ResourceException;
-	void send(byte[] message) throws ResourceException;
+	void send(ByteBuffer message) throws ResourceException;
 	void disconnect() throws ResourceException;
 }

@@ -18,8 +18,9 @@
 package me.jtalk.socketconnector;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 
 public interface UDPConnection {
 
-	void sendTo(InetSocketAddress target, byte[] data);
+	void sendTo(InetSocketAddress target, ByteBuffer data);
 }
