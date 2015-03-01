@@ -19,10 +19,8 @@ package me.jtalk.socketconnector;
 
 import java.io.PrintWriter;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.resource.NotSupportedException;
-import javax.resource.Referenceable;
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
 import javax.resource.cci.ConnectionFactory;
@@ -33,28 +31,24 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterAssociation;
-import javax.resource.spi.ValidatingManagedConnectionFactory;
 import javax.security.auth.Subject;
 
 @ConnectionDefinition(
 	connection = Connection.class,
-	connectionImpl = SocketConnection.class,
+	connectionImpl = TCPConnection.class,
 	connectionFactory = ConnectionFactory.class,
-	connectionFactoryImpl = SocketConnectionFactory.class
+	connectionFactoryImpl = TCPConnectionFactoryImpl.class
 )
-public class ManagedSocketConnectionFactory implements ManagedConnectionFactory, ValidatingManagedConnectionFactory, ResourceAdapterAssociation {
+public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, ResourceAdapterAssociation {
 
 	static final Metadata METADATA = new Metadata();
 
-	private final ConcurrentLinkedDeque<SocketConnectionFactory> factories = new ConcurrentLinkedDeque<>();
-	private final SocketRecordFactory recordFactory = new SocketRecordFactory();
-
-	private PrintWriter logWriter;
+	private AtomicReference<SocketResourceAdapter> adapter = new AtomicReference<>();
+	private AtomicReference<PrintWriter> logWriter = new AtomicReference<>();
 
 	@Override
 	public Object createConnectionFactory(ConnectionManager cxManager) throws ResourceException {
-		SocketConnectionFactory factory = new SocketConnectionFactory(this, cxManager);
-		this.factories.add(factory);
+		TCPConnectionFactoryImpl factory = new TCPConnectionFactoryImpl(this, cxManager);
 		return factory;
 	}
 
@@ -65,63 +59,29 @@ public class ManagedSocketConnectionFactory implements ManagedConnectionFactory,
 
 	@Override
 	public ManagedConnection createManagedConnection(Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
-		if (!(cxRequestInfo instanceof SocketConnectionRequestInfo)) {
+		if (!(cxRequestInfo instanceof NewTCPConnectionRequest)) {
 			throw new ResourceException("Request info provided is not a SocketConnectionRequestInfo");
 		}
-		SocketConnectionRequestInfo info = (SocketConnectionRequestInfo)cxRequestInfo;
-		return new ManagedSocketConnection(info);
+		NewTCPConnectionRequest info = (NewTCPConnectionRequest)cxRequestInfo;
+		ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(this.adapter.get(), info);
+		return newConnection;
 	}
 
 	@Override
 	public ManagedConnection matchManagedConnections(Set connectionSet, Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
-		if (!(cxRequestInfo instanceof SocketConnectionRequestInfo)) {
-			throw new ResourceException("Request info provided is not a SocketConnectionRequestInfo");
-		}
-		SocketConnectionRequestInfo info = (SocketConnectionRequestInfo)cxRequestInfo;
-		for (Object obj : connectionSet) {
-			if (!(obj instanceof ManagedSocketConnection)) {
-				continue;
-			}
-			ManagedSocketConnection conn = (ManagedSocketConnection)obj;
-			if (conn.applies(info)) {
-				return conn;
-			}
-		}
-		return null;
+		throw new NotSupportedException("Managed connections pooling is not supported");
 	}
 
 	@Override
 	public void setLogWriter(PrintWriter out) throws ResourceException {
-		this.logWriter = out;
+		if (!this.logWriter.compareAndSet(null, out)) {
+			throw new javax.resource.spi.IllegalStateException("LogWriter is set more than once");
+		}
 	}
 
 	@Override
 	public PrintWriter getLogWriter() throws ResourceException {
-		return this.logWriter;
-	}
-
-	@Override
-	public Set getInvalidConnections(Set connectionSet) throws ResourceException {
-		return (Set)connectionSet.stream()
-			.filter(obj -> {
-				if (!(obj instanceof ManagedSocketConnection)) {
-					return true;
-				}
-				ManagedSocketConnection conn = (ManagedSocketConnection)obj;
-				return !conn.isActive();
-			})
-			.collect(Collectors.toSet());
-	}
-
-	SocketRecordFactory getRecordFactory() {
-		return this.recordFactory;
-	}
-
-	private void log(String message) {
-		PrintWriter writer = this.logWriter;
-		if (writer != null) {
-			writer.println(message);
-		}
+		return this.logWriter.get();
 	}
 
 	@Override
@@ -141,13 +101,20 @@ public class ManagedSocketConnectionFactory implements ManagedConnectionFactory,
 		newAdapter.registerConnectionFactory(this);
 	}
 
+	private void log(String message) {
+		PrintWriter writer = this.logWriter.get();
+		if (writer != null) {
+			writer.println(message);
+		}
+	}
+
 	@Override
 	public boolean equals(Object obj) {
-		return super.equals(obj); //To change body of generated methods, choose Tools | Templates.
+		return super.equals(obj);
 	}
 
 	@Override
 	public int hashCode() {
-		return super.hashCode(); //To change body of generated methods, choose Tools | Templates.
+		return super.hashCode();
 	}
 }

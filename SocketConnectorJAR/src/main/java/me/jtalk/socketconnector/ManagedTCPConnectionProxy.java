@@ -37,27 +37,44 @@ import javax.transaction.xa.XAResource;
 import javax.validation.ConstraintViolation;
 import javax.validation.groups.Default;
 
-public class ManagedSocketConnectionProxy implements ManagedConnection {
+public class ManagedTCPConnectionProxy implements ManagedConnection {
 
-	private final long ID;
+	private long ID = 0;
+
 	private final SocketResourceAdapter adapter;
-	private final SocketConnectionRequestInfo info;
+	private final NewTCPConnectionRequest info;
 
 	private final AtomicReference<PrintWriter> logWriter = new AtomicReference<>(null);
-
-	private final AtomicReference<SocketConnection> connection = new AtomicReference<>(null);
+	private final AtomicReference<TCPConnectionImpl> connection = new AtomicReference<>(null);
 	private final Set<ConnectionEventListener> eventListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
-	ManagedSocketConnectionProxy(long id, SocketResourceAdapter adapter, SocketConnectionRequestInfo info) throws ResourceException {
+	ManagedTCPConnectionProxy(SocketResourceAdapter adapter, NewTCPConnectionRequest info) throws ResourceException {
 
-		this.ID = id;
 		this.adapter = adapter;
 		this.info = info;
-		this.isRunning.set(true);
 
 		this.validateInfo(info);
+
+		this.ID = adapter.createConnection(info);
+		this.isRunning.set(true);
+	}
+
+	public long getId() {
+		return this.ID;
+	}
+
+	public void disconnect() throws ResourceException {
+
+		this.cleanup();
+		this.isRunning.set(false);
+		this.adapter.closeConnection(this.ID);
+		this.notifyEvent(new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED), ConnectionEventListener::connectionClosed);
+	}
+
+	public void send(byte[] data) {
+		this.adapter.send(this.ID, data);
 	}
 
 	@Override
@@ -67,11 +84,9 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 			throw new ResourceException("Socket connection requested from disconnected managed connection");
 		}
 
-		if (!this.info.equals(cxRequestInfo)) {
-			throw new ResourceException("Connection request info supplied does not match this managed connection");
-		}
+		this.checkInfo(cxRequestInfo);
 
-		SocketConnection conn = new SocketConnection(this);
+		TCPConnection conn = new TCPConnectionImpl(this);
 		this.replaceActiveConnection(conn);
 
 		return conn;
@@ -79,11 +94,7 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 
 	@Override
 	public void destroy() throws ResourceException {
-
-		this.cleanup();
-		this.isRunning.set(false);
-		this.adapter.connectionClose(this.ID, this.info);
-		this.notifyEvent(new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED), ConnectionEventListener::connectionClosed);
+		this.disconnect();
 	}
 
 	@Override
@@ -93,11 +104,11 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 
 	@Override
 	public void associateConnection(Object connection) throws ResourceException {
-		if (!(connection instanceof SocketConnection)) {
-			throw new ResourceException("Connection supplied is not a SocketConnection");
+		if (!(connection instanceof TCPConnectionImpl)) {
+			throw new ResourceException("Connection supplied is not a TCPConnectionImpl");
 		}
 
-		SocketConnection newConnection = (SocketConnection)connection;
+		TCPConnectionImpl newConnection = (TCPConnectionImpl)connection;
 		newConnection.reassign(this);
 		this.replaceActiveConnection(newConnection);
 	}
@@ -146,9 +157,9 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 		}
 	}
 
-	private void replaceActiveConnection(SocketConnection newConnection) {
+	private void replaceActiveConnection(TCPConnectionImpl newConnection) {
 
-		SocketConnection old = this.connection.getAndSet(newConnection);
+		TCPConnectionImpl old = this.connection.getAndSet(newConnection);
 		if (old != null) {
 			old.invalidate();
 		}
@@ -160,17 +171,32 @@ public class ManagedSocketConnectionProxy implements ManagedConnection {
 		}
 	}
 
-	private void validateInfo(SocketConnectionRequestInfo info) throws ResourceException {
-		Set<ConstraintViolation<SocketConnectionRequestInfo>> violations = this.adapter.getValidator().validate(info, Default.class);
+	private void validateInfo(NewTCPConnectionRequest info) throws ResourceException {
+		Set<ConstraintViolation<NewTCPConnectionRequest>> violations = this.adapter.getValidator().validate(info, Default.class);
 		if (violations.isEmpty()) {
 			return;
 		}
 
-		for (ConstraintViolation<SocketConnectionRequestInfo> violation : violations) {
+		for (ConstraintViolation<NewTCPConnectionRequest> violation : violations) {
 			String message = violation.getMessage();
 			this.log(message);
 		}
 
 		throw new ResourceException("Socket connection request info constraints violation failed");
+	}
+
+	private void checkInfo(ConnectionRequestInfo rawInfo) throws ResourceException {
+		if (this.info.equals(rawInfo)) {
+			return;
+		}
+		if (!(rawInfo instanceof ExistingTCPConnectionRequest)) {
+			this.log(String.format("Unknown connection request info %s supplied to ManagedConnection", rawInfo.getClass().getCanonicalName()));
+			throw new ResourceException("Unknown connection request info type");
+		}
+		ExistingTCPConnectionRequest request = (ExistingTCPConnectionRequest)rawInfo;
+		if (request.getId() != this.ID) {
+			this.log(String.format("Connection request ID mismatch in ManagedConnection: %d stored, %d requested", this.ID, request.getId()));
+			throw new ResourceException("Requested ID does not match internal one");
+		}
 	}
 }
