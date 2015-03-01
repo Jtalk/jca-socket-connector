@@ -17,12 +17,11 @@
 
 package me.jtalk.socketconnector;
 
-import javax.resource.cci.Record;
+import java.net.InetSocketAddress;
 
-public interface SocketIncomingRecord extends Record {
+public interface UDPMessage {
 
-	String getIP();
-	int getPort();
-	SocketType getType();
+	InetSocketAddress getRemote();
+	InetSocketAddress getLocal();
 	byte[] getData();
 }

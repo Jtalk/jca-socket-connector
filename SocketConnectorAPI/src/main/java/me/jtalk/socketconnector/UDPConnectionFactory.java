@@ -17,9 +17,10 @@
 
 package me.jtalk.socketconnector;
 
-import javax.resource.cci.Record;
+import java.net.InetSocketAddress;
+import javax.resource.ResourceException;
 
-public interface SocketOutcomingRecord extends Record {
+public interface UDPConnectionFactory {
 
-	void setData(byte[] data);
+	UDPConnection getConnection(InetSocketAddress target) throws ResourceException;
 }

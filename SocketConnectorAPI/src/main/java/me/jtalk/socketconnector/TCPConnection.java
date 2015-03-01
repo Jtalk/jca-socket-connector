@@ -17,11 +17,11 @@
 
 package me.jtalk.socketconnector;
 
-import javax.resource.cci.ConnectionSpec;
+import javax.resource.ResourceException;
 
-public interface SocketConnectionSpec extends ConnectionSpec {
+public interface TCPConnection {
 
-	public String getAddress();
-	public int getPort();
-	public SocketType getType();
+	long getId() throws ResourceException;
+	void send(byte[] message) throws ResourceException;
+	void disconnect() throws ResourceException;
 }

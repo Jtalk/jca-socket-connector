@@ -17,9 +17,8 @@
 
 package me.jtalk.socketconnector;
 
-import javax.resource.cci.RecordFactory;
+public interface TCPMessageListener {
 
-public interface SocketRecordFactory extends RecordFactory {
-
-	SocketOutcomingRecord createOutcomingRecord();
+	void onMessage(TCPMessage message);
+	void disconnected(TCPDisconnectionNotification notification);
 }

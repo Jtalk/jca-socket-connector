@@ -17,7 +17,13 @@
 
 package me.jtalk.socketconnector;
 
-public enum SocketType {
-	TCP,
-	UDP
+import java.io.Serializable;
+import java.net.InetSocketAddress;
+import javax.resource.Referenceable;
+import javax.resource.ResourceException;
+
+public interface TCPConnectionFactory extends Serializable, Referenceable {
+
+	TCPConnection getConnection(long connectionId) throws ResourceException;
+	TCPConnection getConnection(InetSocketAddress target) throws ResourceException;
 }

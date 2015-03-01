@@ -17,7 +17,7 @@
 
 package me.jtalk.socketconnector;
 
-import javax.resource.cci.MessageListener;
+public interface UDPMessageListener {
 
-public interface SocketMessageListener extends MessageListener {
+	void onMessage(UDPMessage message);
 }
