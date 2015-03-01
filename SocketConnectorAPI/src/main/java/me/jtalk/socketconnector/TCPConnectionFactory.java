@@ -25,5 +25,5 @@ import javax.resource.ResourceException;
 public interface TCPConnectionFactory extends Serializable, Referenceable {
 
 	TCPConnection getConnection(long connectionId) throws ResourceException;
-	TCPConnection getConnection(InetSocketAddress target) throws ResourceException;
+	TCPConnection createConnection(InetSocketAddress target) throws ResourceException;
 }

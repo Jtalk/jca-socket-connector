@@ -40,7 +40,7 @@ public class TCPConnectionFactoryImpl extends BaseConnectionFactory implements T
 	}
 
 	@Override
-	public TCPConnection getConnection(InetSocketAddress target) throws ResourceException {
+	public TCPConnection createConnection(InetSocketAddress target) throws ResourceException {
 		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(target));
 		return check(connObject);
 	}
