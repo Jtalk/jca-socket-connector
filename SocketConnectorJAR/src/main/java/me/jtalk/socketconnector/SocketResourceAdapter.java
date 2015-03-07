@@ -65,7 +65,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	private WorkManager workManager;
 
-	private boolean running;
+	private final AtomicBoolean running = new AtomicBoolean(false);
 	private final ConcurrentHashMap<Long, TCPManagerStorage> tcpManagers = new ConcurrentHashMap<>();
 
 	@Resource
@@ -86,19 +86,19 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	@Override
 	public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
 		this.workManager = ctx.getWorkManager();
-		this.running = true;
+		this.running.set(true);
 	}
 
 	@Override
 	public void stop() {
-		this.running = false;
+		this.running.set(false);
 		this.stopTCP();
 		this.workManager = null;
 	}
 
 	@Override
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) throws ResourceException {
-		if (!this.running) {
+		if (!this.running.get()) {
 			throw new ResourceException("This resource adapter is stopped");
 		}
 		if (!(spec instanceof TCPActivationSpec)) {
@@ -112,7 +112,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	@Override
 	public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
-		if (!this.running) {
+		if (!this.running.get()) {
 			log.warning("Endpoint deactivation called on disabled resource adapter");
 			return;
 		}
