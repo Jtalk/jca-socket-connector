@@ -17,7 +17,6 @@
 
 package me.jtalk.socketconnector;
 
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.resource.ResourceException;
@@ -69,10 +68,22 @@ public class TCPActivationSpec implements ActivationSpec {
 	private int localPort;
 
 	@ConfigProperty(
-		description = "Free port searching",
-		defaultValue = "false"
+		description = "Socket listener threads count",
+		defaultValue = "2"
 	)
-	private boolean searchFreeLocalPort;
+	private int listnerThreadsCount;
+
+	@ConfigProperty(
+		description = "Socket receiver threads count",
+		defaultValue = "4"
+	)
+	private int receiverThreadsCount;
+
+	@ConfigProperty(
+		description = "TCP listening backlog size",
+		defaultValue = "50"
+	)
+	private int backlog;
 
 	@Override
 	public void validate() throws InvalidPropertyException {
@@ -136,5 +147,37 @@ public class TCPActivationSpec implements ActivationSpec {
 
 	public void setSearchFreeLocalPort(boolean searchFreeLocalPort) {
 		this.searchFreeLocalPort = searchFreeLocalPort;
+	}
+
+	public ResourceAdapter getAdapter() {
+		return adapter;
+	}
+
+	public void setAdapter(ResourceAdapter adapter) {
+		this.adapter = adapter;
+	}
+
+	public int getListnerThreadsCount() {
+		return listnerThreadsCount;
+	}
+
+	public void setListnerThreadsCount(int listnerThreadsCount) {
+		this.listnerThreadsCount = listnerThreadsCount;
+	}
+
+	public int getReceiverThreadsCount() {
+		return receiverThreadsCount;
+	}
+
+	public void setReceiverThreadsCount(int receiverThreadsCount) {
+		this.receiverThreadsCount = receiverThreadsCount;
+	}
+
+	public int getBacklog() {
+		return backlog;
+	}
+
+	public void setBacklog(int backlog) {
+		this.backlog = backlog;
 	}
 }
