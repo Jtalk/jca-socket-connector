@@ -28,6 +28,7 @@ import javax.resource.spi.InvalidPropertyException;
 import javax.resource.spi.ResourceAdapter;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import me.jtalk.socketconnector.validation.NetAddress;
 import org.apache.commons.validator.routines.InetAddressValidator;
 
 @Activation(messageListeners = TCPMessageListener.class)
@@ -56,6 +57,7 @@ public class TCPActivationSpec implements ActivationSpec {
 		description = "IP address to bind to",
 		defaultValue = "0.0.0.0"
 	)
+	@NetAddress
 	private String localAddress;
 
 	@ConfigProperty(
