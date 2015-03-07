@@ -98,7 +98,6 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 		if (!this.adapter.compareAndSet(null, newAdapter)) {
 			throw new javax.resource.spi.IllegalStateException("Resource adapter is applied more than once");
 		}
-		newAdapter.registerConnectionFactory(this);
 	}
 
 	private void log(String message) {

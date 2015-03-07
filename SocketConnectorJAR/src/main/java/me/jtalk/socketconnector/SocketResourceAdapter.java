@@ -47,7 +47,6 @@ import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
 import javax.validation.Validator;
-import sun.misc.CEFormatException;
 
 @Connector(
 	displayName = Metadata.NAME,
@@ -76,7 +75,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			TCP_MESSAGE_DATA_METHOD = TCPMessageListener.class.getMethod("onMessage", TCPMessage.class);
 			TCP_MESSAGE_STATUS_METHOD = TCPMessageListener.class.getMethod("disconnected", TCPDisconnectionNotification.class);
 		} catch (NoSuchMethodException e) {
-			log.log(Level.SEVERE, "Methods onMessage or disconnected not found in TCPMessageListener, poor refactoring?", e);
+			throw new RuntimeException("Methods onMessage or disconnected not found in TCPMessageListener, poor refactoring?", e);
 		}
 	}
 
