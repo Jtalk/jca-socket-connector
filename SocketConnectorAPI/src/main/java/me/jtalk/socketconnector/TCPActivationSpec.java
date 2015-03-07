@@ -27,9 +27,7 @@ import javax.resource.spi.InvalidPropertyException;
 import javax.resource.spi.ResourceAdapter;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import me.jtalk.socketconnector.TCPMessageListener;
 import me.jtalk.socketconnector.validation.NetAddress;
-import org.apache.commons.validator.routines.InetAddressValidator;
 
 @Activation(messageListeners = TCPMessageListener.class)
 public class TCPActivationSpec implements ActivationSpec {
@@ -88,12 +86,6 @@ public class TCPActivationSpec implements ActivationSpec {
 
 	@Override
 	public void validate() throws InvalidPropertyException {
-		if (this.localPort >= 65535) {
-			throw new InvalidPropertyException(String.format("Invalid local port value: %s is greater than 65535", this.localPort));
-		}
-		if (!InetAddressValidator.getInstance().isValid(this.localAddress)) {
-			throw new InvalidPropertyException(String.format("Invalid local IP address %s", this.localAddress));
-		}
 	}
 
 	@Override
