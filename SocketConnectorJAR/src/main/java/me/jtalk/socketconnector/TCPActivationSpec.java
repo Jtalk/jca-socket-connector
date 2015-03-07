@@ -141,14 +141,6 @@ public class TCPActivationSpec implements ActivationSpec {
 		this.localPort = localPort;
 	}
 
-	public boolean isSearchFreeLocalPort() {
-		return searchFreeLocalPort;
-	}
-
-	public void setSearchFreeLocalPort(boolean searchFreeLocalPort) {
-		this.searchFreeLocalPort = searchFreeLocalPort;
-	}
-
 	public ResourceAdapter getAdapter() {
 		return adapter;
 	}
