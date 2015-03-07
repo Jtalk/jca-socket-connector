@@ -17,15 +17,15 @@
 
 package me.jtalk.socketconnector;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public interface TCPDisconnectionNotification {
 
 	long getId();
-	
-	InetSocketAddress getRemote();
-	InetSocketAddress getLocal();
+
+	SocketAddress getRemote();
+	SocketAddress getLocal();
 
 	boolean isError();
-	String getErrorMessage();
+	Throwable getCause();
 }

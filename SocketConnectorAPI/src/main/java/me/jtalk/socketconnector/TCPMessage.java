@@ -17,12 +17,12 @@
 
 package me.jtalk.socketconnector;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public interface TCPMessage {
 
 	long getConnectionId();
-	InetSocketAddress getRemote();
-	InetSocketAddress getLocal();
+	SocketAddress getRemote();
+	SocketAddress getLocal();
 	byte[] getData();
 }
