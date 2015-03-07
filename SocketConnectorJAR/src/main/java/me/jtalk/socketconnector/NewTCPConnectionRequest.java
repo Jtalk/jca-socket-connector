@@ -27,6 +27,8 @@ import me.jtalk.socketconnector.validation.NetAddress;
 
 class NewTCPConnectionRequest implements ConnectionRequestInfo {
 
+	private final long uid;
+
 	@NotNull
 	@NetAddress
 	private final String address;
@@ -35,9 +37,14 @@ class NewTCPConnectionRequest implements ConnectionRequestInfo {
 	@Max(65535)
 	private final int port;
 
-	public NewTCPConnectionRequest(InetSocketAddress address) {
+	public NewTCPConnectionRequest(long uid, InetSocketAddress address) {
+		this.uid = uid;
 		this.address = address.getHostString();
 		this.port = address.getPort();
+	}
+
+	public long getUid() {
+		return this.uid;
 	}
 
 	public String getAddress() {

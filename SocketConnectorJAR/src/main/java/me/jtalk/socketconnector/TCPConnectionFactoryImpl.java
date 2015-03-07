@@ -34,14 +34,14 @@ public class TCPConnectionFactoryImpl extends BaseConnectionFactory implements T
 	}
 
 	@Override
-	public TCPConnection getConnection(long connectionId) throws ResourceException {
-		Object connObject = this.manager.allocateConnection(this.parent, new ExistingTCPConnectionRequest(connectionId));
+	public TCPConnection getConnection(long uid, long connectionId) throws ResourceException {
+		Object connObject = this.manager.allocateConnection(this.parent, new ExistingTCPConnectionRequest(uid, connectionId));
 		return check(connObject);
 	}
 
 	@Override
-	public TCPConnection createConnection(InetSocketAddress target) throws ResourceException {
-		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(target));
+	public TCPConnection createConnection(long uid, InetSocketAddress target) throws ResourceException {
+		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, target));
 		return check(connObject);
 	}
 

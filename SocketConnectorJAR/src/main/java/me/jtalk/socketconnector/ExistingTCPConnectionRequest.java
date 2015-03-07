@@ -21,10 +21,16 @@ import javax.resource.spi.ConnectionRequestInfo;
 
 public class ExistingTCPConnectionRequest implements ConnectionRequestInfo {
 
-	private long id;
+	private final long uid;
+	private final long id;
 
-	public ExistingTCPConnectionRequest(long id) {
+	public ExistingTCPConnectionRequest(long uid, long id) {
+		this.uid = uid;
 		this.id = id;
+	}
+
+	public long getUid() {
+		return this.uid;
 	}
 
 	public long getId() {
