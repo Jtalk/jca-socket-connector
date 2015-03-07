@@ -10,6 +10,5 @@
     <module>SocketConnectorRAR</module>
     <module>SocketConnectorJAR</module>
     <module>SocketConnectorAPI</module>
-    <module>SocketConnectorAPI</module>
   </modules>
 </project>
