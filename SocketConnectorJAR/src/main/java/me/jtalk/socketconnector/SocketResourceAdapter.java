@@ -17,8 +17,18 @@
 
 package me.jtalk.socketconnector;
 
+import me.jtalk.socketconnector.io.TCPManager;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.annotation.Resource;
+import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -30,6 +40,7 @@ import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
 import javax.validation.Validator;
+import sun.misc.CEFormatException;
 
 @Connector(
 	displayName = Metadata.NAME,
@@ -43,26 +54,54 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	private WorkManager workManager;
 
+	private boolean running;
+	private final ConcurrentHashMap<Long, TCPManagerStorage> tcpManagers = new ConcurrentHashMap<>();
+
 	@Resource
-	Validator validator;
+	private Validator validator;
+
+	public SocketResourceAdapter() throws IOException {
+	}
 
 	@Override
 	public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
 		this.workManager = ctx.getWorkManager();
+		this.running = true;
 	}
 
 	@Override
 	public void stop() {
+		this.running = false;
+		this.stopTCP();
 		this.workManager = null;
 	}
 
 	@Override
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) throws ResourceException {
-
+		if (!this.running) {
+			throw new ResourceException("This resource adapter is stopped");
+		}
+		if (!(spec instanceof TCPActivationSpec)) {
+			throw new NotSupportedException("Activation spec supplied has unsupported type " + spec.getClass().getCanonicalName());
+		}
+		else
+		{
+			this.activateTCP(endpointFactory, (TCPActivationSpec)spec);
+		}
 	}
 
 	@Override
 	public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
+		if (!this.running) {
+			return;
+		}
+		if (!(spec instanceof TCPActivationSpec)) {
+			return;
+		}
+		else
+		{
+			this.deactivateTCP(endpointFactory, (TCPActivationSpec)spec);
+		}
 
 	}
 
@@ -75,16 +114,28 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		return this.validator;
 	}
 
-	long createTCPConnection(InetSocketAddress target) {
-		return this.tcpManager.connect(target);
+	long createTCPConnection(long clientId, InetSocketAddress target) throws ResourceException {
+		TCPManager manager = this.getTCPManager(clientId);
+		if (manager == null) {
+			throw new ConnectionClosedException("Connection is already clised");
+		}
+		return manager.connect(target);
 	}
 
-	void sendTCP(long id, byte[] data) {
-		this.tcpManager.send(id, data);
+	void sendTCP(long clientId, long id, ByteBuffer data) throws ResourceException {
+		TCPManager manager = this.getTCPManager(clientId);
+		if (manager == null) {
+			throw new ConnectionClosedException("Connection is already clised");
+		}
+		manager.send(id, data);
 	}
 
-	void closeTCPConnection(long id) {
-		this.tcpManager.close(id);
+	void closeTCPConnection(long clientId, long id) throws ResourceException {
+		TCPManager manager = this.getTCPManager(clientId);
+		if (manager == null) {
+			throw new ConnectionClosedException("Connection is already clised");
+		}
+		manager.close(id);
 	}
 
 	@Override
@@ -95,5 +146,47 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	@Override
 	public boolean equals(Object obj) {
 		return super.equals(obj);
+	}
+
+	private void activateTCP(MessageEndpointFactory factory, TCPActivationSpec spec) throws ResourceException {
+		synchronized(this.tcpManagers) {
+			long id = spec.getClientId();
+			TCPManagerStorage newStorage = new TCPManagerStorage();
+			TCPManagerStorage storage = this.tcpManagers.putIfAbsent(id, newStorage);
+			if (storage == newStorage) {
+				TCPManager manager = new TCPManager(this, id, spec);
+				storage.setManager(manager);
+				storage.setSpec(spec);
+				storage.addEndpoint(factory);
+			}
+		}
+	}
+
+	private void deactivateTCP(MessageEndpointFactory factory, TCPActivationSpec spec) {
+		synchronized(this.tcpManagers) {
+			long id = spec.getClientId();
+			TCPManagerStorage storage = this.tcpManagers.get(id);
+			storage.removeEndpoint(factory);
+			if (storage.isEmpty()) {
+				this.tcpManagers.remove(id);
+				storage.getManager().close();
+			}
+		}
+	}
+
+	private void stopTCP() {
+		synchronized(this.tcpManagers) {
+			Iterator<Map.Entry<Long, TCPManagerStorage>> iter = this.tcpManagers.entrySet().iterator();
+			while (iter.hasNext()) {
+				TCPManagerStorage s = iter.next().getValue();
+				s.getManager().close();
+				iter.remove();
+			}
+		}
+	}
+
+	private TCPManager getTCPManager(long clientId) {
+		TCPManagerStorage s = this.tcpManagers.get(clientId);
+		return s.getManager();
 	}
 }
