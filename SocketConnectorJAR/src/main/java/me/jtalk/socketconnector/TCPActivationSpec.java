@@ -17,6 +17,7 @@
 
 package me.jtalk.socketconnector;
 
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.resource.ResourceException;
@@ -25,38 +26,51 @@ import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.ConfigProperty;
 import javax.resource.spi.InvalidPropertyException;
 import javax.resource.spi.ResourceAdapter;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import org.apache.commons.validator.routines.InetAddressValidator;
 
-@Activation(messageListeners = SocketMessageListener.class)
-public class SocketAdapterActivationSpec implements ActivationSpec {
+@Activation(messageListeners = TCPMessageListener.class)
+public class TCPActivationSpec implements ActivationSpec {
 
-	private static final Logger log = Logger.getLogger(SocketAdapterActivationSpec.class.getName());
+	private static final Logger log = Logger.getLogger(TCPActivationSpec.class.getName());
 
 	private ResourceAdapter adapter;
+
+	@ConfigProperty(
+		description = "Unique connection pool identifier. This value is used "
+			+ "to distinguish different AS applications using same Resource Adapter. "
+			+ "Application must use unique identifier for all created Connections "
+			+ "and all MessageListeners. Once last MessageListener with this identifier "
+			+ "is undeployed, connection pool will be destroyed as well."
+	)
+	private long clientId;
 
 	@ConfigProperty(
 		description = "TCP keepalive enablement",
 		defaultValue = "true"
 	)
-	public boolean hasKeepalive;
+	private boolean keepalive;
 
 	@ConfigProperty(
 		description = "IP address to bind to",
 		defaultValue = "0.0.0.0"
 	)
-	public String localAddress;
+	private String localAddress;
 
 	@ConfigProperty(
 		description = "Local port to bind to",
 		defaultValue = "0"
 	)
-	public int localPort;
+	@Min(0)
+	@Max(65535)
+	private int localPort;
 
 	@ConfigProperty(
 		description = "Free port searching",
 		defaultValue = "false"
 	)
-	public boolean searchFreeLocalPort;
+	private boolean searchFreeLocalPort;
 
 	@Override
 	public void validate() throws InvalidPropertyException {
@@ -75,11 +89,50 @@ public class SocketAdapterActivationSpec implements ActivationSpec {
 
 	@Override
 	public void setResourceAdapter(ResourceAdapter ra) throws ResourceException {
-		log.log(Level.FINE, String.format("%s is assigned to %s", ra.getClass().getName(), SocketAdapterActivationSpec.class.getName()));
+		log.log(Level.FINE, String.format("%s is assigned to %s", ra.getClass().getName(), TCPActivationSpec.class.getName()));
 		if (this.adapter != null) {
 			throw new javax.resource.spi.IllegalStateException("Resource adapter is associated with ActivationSpec again");
 		}
 		this.adapter = ra;
 	}
 
+	public long getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(long clientId) {
+		this.clientId = clientId;
+	}
+
+	public boolean isKeepalive() {
+		return keepalive;
+	}
+
+	public void setKeepalive(boolean keepalive) {
+		this.keepalive = keepalive;
+	}
+
+	public String getLocalAddress() {
+		return localAddress;
+	}
+
+	public void setLocalAddress(String localAddress) {
+		this.localAddress = localAddress;
+	}
+
+	public int getLocalPort() {
+		return localPort;
+	}
+
+	public void setLocalPort(int localPort) {
+		this.localPort = localPort;
+	}
+
+	public boolean isSearchFreeLocalPort() {
+		return searchFreeLocalPort;
+	}
+
+	public void setSearchFreeLocalPort(boolean searchFreeLocalPort) {
+		this.searchFreeLocalPort = searchFreeLocalPort;
+	}
 }
