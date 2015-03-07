@@ -52,6 +52,7 @@ public class TCPManager implements Closeable {
 	private static final long SHUTDOWN_TIMEOUT_SEC = 60;
 
 	private SocketResourceAdapter parent;
+	private final long id;
 
 	private final EventLoopGroup listeners;
 	private final EventLoopGroup workers;
@@ -62,9 +63,10 @@ public class TCPManager implements Closeable {
 	private final ConcurrentLinkedQueue<ConnectionContext> contextPool = new ConcurrentLinkedQueue<>();
 	private final AtomicLong ids = new AtomicLong(0);
 
-	public TCPManager(SocketResourceAdapter parent, TCPActivationSpec spec) throws ResourceException {
+	public TCPManager(SocketResourceAdapter parent, long id, TCPActivationSpec spec) throws ResourceException {
 
 		this.parent = parent;
+		this.id = id;
 
 		ThreadFactory factory = new DaemonThreadFactory();
 		this.listeners = new NioEventLoopGroup(spec.getListnerThreadsCount(), factory);
@@ -156,7 +158,7 @@ public class TCPManager implements Closeable {
 			ctx.clear();
 			this.contextPool.add(ctx);
 		}
-		this.parent.notifyShutdown(id, local, remote, cause);
+		this.parent.notifyShutdown(this.id, id, local, remote, cause);
 	}
 
 	void dataReceived(long id, byte[] data) {
@@ -165,7 +167,7 @@ public class TCPManager implements Closeable {
 			// Drop data from closed connection
 			return;
 		}
-		this.parent.notifyReceived(id, data, ctx.local, ctx.remote);
+		this.parent.notifyReceived(this.id, id, data, ctx.local, ctx.remote);
 	}
 
 	private ServerBootstrap instantiateServer(TCPActivationSpec spec) throws ResourceException {

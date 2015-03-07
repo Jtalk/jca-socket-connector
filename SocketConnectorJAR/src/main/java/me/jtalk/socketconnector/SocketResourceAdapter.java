@@ -19,6 +19,8 @@ package me.jtalk.socketconnector;
 
 import me.jtalk.socketconnector.io.TCPManager;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -26,7 +28,9 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
 import javax.resource.NotSupportedException;
@@ -37,6 +41,8 @@ import javax.resource.spi.Connector;
 import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.TransactionSupport;
+import javax.resource.spi.UnavailableException;
+import javax.resource.spi.endpoint.MessageEndpoint;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
@@ -54,6 +60,8 @@ import sun.misc.CEFormatException;
 public class SocketResourceAdapter implements ResourceAdapter {
 
 	private static final Logger log = Logger.getLogger(SocketAddress.class.getName());
+	private static final Method TCP_MESSAGE_DATA_METHOD;
+	private static final Method TCP_MESSAGE_STATUS_METHOD;
 
 	private WorkManager workManager;
 
@@ -62,6 +70,15 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	@Resource
 	private Validator validator;
+
+	static {
+		try {
+			TCP_MESSAGE_DATA_METHOD = TCPMessageListener.class.getMethod("onMessage", TCPMessage.class);
+			TCP_MESSAGE_STATUS_METHOD = TCPMessageListener.class.getMethod("disconnected", TCPDisconnectionNotification.class);
+		} catch (NoSuchMethodException e) {
+			log.log(Level.SEVERE, "Methods onMessage or disconnected not found in TCPMessageListener, poor refactoring?", e);
+		}
+	}
 
 	public SocketResourceAdapter() throws IOException {
 	}
@@ -106,12 +123,21 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		{
 			this.deactivateTCP(endpointFactory, (TCPActivationSpec)spec);
 		}
-
 	}
 
 	@Override
 	public XAResource[] getXAResources(ActivationSpec[] specs) throws ResourceException {
 		return null;
+	}
+
+	public void notifyReceived(long clientId, long id, byte[] data, SocketAddress local, SocketAddress remote) {
+		TCPMessage message = new TCPMessageImpl(id, remote, local, data);
+		this.sendEndpoints(clientId, TCP_MESSAGE_DATA_METHOD, message);
+	}
+
+	public void notifyShutdown(long clientId, long id, SocketAddress local, SocketAddress remote, Throwable cause) {
+		TCPDisconnectionNotification notification = new TCPDisconnectionNotificationImpl(id, remote, local, cause);
+		this.sendEndpoints(clientId, TCP_MESSAGE_STATUS_METHOD, notification);
 	}
 
 	Validator getValidator() {
@@ -192,5 +218,36 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	private TCPManager getTCPManager(long clientId) {
 		TCPManagerStorage s = this.tcpManagers.get(clientId);
 		return s.getManager();
+	}
+
+	private <T> void sendEndpoints(long clientId, Method target, T message) {
+		TCPManagerStorage storage = this.tcpManagers.get(clientId);
+		if (storage == null) {
+			log.finer("Message sending requested for deactivated client");
+			return;
+		}
+
+		Iterable<MessageEndpointFactory> endpoints = storage.endpoints();
+		for (MessageEndpointFactory factory : endpoints) {
+			this.sendEndpoint(factory, target, message);
+		}
+	}
+
+	private <T> void sendEndpoint(MessageEndpointFactory factory, Method target, T message) {
+		try {
+			MessageEndpoint endpoint = factory.createEndpoint(null);
+			endpoint.beforeDelivery(target);
+			try {
+				target.invoke(endpoint, message);
+			} catch (IllegalAccessException | InvocationTargetException e) {
+				log.log(Level.SEVERE, "Exception on message endpoint invocation", e);
+			}
+			endpoint.afterDelivery();
+			endpoint.release();
+		} catch (UnavailableException e) {
+			log.log(Level.SEVERE, "Message endpoint is unavailable", e);
+		} catch (ResourceException | NoSuchMethodException e) {
+			log.log(Level.SEVERE, "Exception on message endpoint processing", e);
+		}
 	}
 }
