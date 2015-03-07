@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 import javax.annotation.Resource;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
@@ -51,6 +52,8 @@ import sun.misc.CEFormatException;
 	transactionSupport = TransactionSupport.TransactionSupportLevel.NoTransaction
 )
 public class SocketResourceAdapter implements ResourceAdapter {
+
+	private static final Logger log = Logger.getLogger(SocketAddress.class.getName());
 
 	private WorkManager workManager;
 
@@ -93,10 +96,11 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	@Override
 	public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
 		if (!this.running) {
+			log.warning("Endpoint deactivation called on disabled resource adapter");
 			return;
 		}
 		if (!(spec instanceof TCPActivationSpec)) {
-			return;
+			log.warning("Endpoint deactivation called with invalid ActivationSpec type");
 		}
 		else
 		{
