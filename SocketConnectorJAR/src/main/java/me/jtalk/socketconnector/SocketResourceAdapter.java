@@ -21,7 +21,6 @@ import me.jtalk.socketconnector.io.TCPManager;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -29,7 +28,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
@@ -80,6 +78,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	}
 
 	public SocketResourceAdapter() throws IOException {
+		log.info("Soccket resource adapter is instantiated");
 	}
 
 	@Override
