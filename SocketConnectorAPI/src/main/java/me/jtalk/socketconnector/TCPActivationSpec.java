@@ -27,6 +27,7 @@ import javax.resource.spi.InvalidPropertyException;
 import javax.resource.spi.ResourceAdapter;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import me.jtalk.socketconnector.TCPMessageListener;
 import me.jtalk.socketconnector.validation.NetAddress;
 import org.apache.commons.validator.routines.InetAddressValidator;
 
