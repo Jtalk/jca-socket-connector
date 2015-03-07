@@ -19,8 +19,6 @@ package me.jtalk.socketconnector.io;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
@@ -30,15 +28,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
@@ -51,7 +44,7 @@ import javax.resource.spi.EISSystemException;
 import javax.resource.spi.ResourceAdapterInternalException;
 import me.jtalk.socketconnector.ConnectionClosedException;
 import me.jtalk.socketconnector.SocketResourceAdapter;
-import me.jtalk.socketconnector.SocketStatusListener;
+import me.jtalk.socketconnector.TCPActivationSpec;
 
 public class TCPManager implements Closeable {
 
@@ -69,14 +62,15 @@ public class TCPManager implements Closeable {
 	private final ConcurrentLinkedQueue<ConnectionContext> contextPool = new ConcurrentLinkedQueue<>();
 	private final AtomicLong ids = new AtomicLong(0);
 
-	public TCPManager(SocketResourceAdapter parent, InetSocketAddress address, int listener_threads, int worker_threads, int backlog) {
+	public TCPManager(SocketResourceAdapter parent, TCPActivationSpec spec) throws ResourceException {
+
 		this.parent = parent;
 
 		ThreadFactory factory = new DaemonThreadFactory();
-		this.listeners = new NioEventLoopGroup(listener_threads, factory);
-		this.workers = new NioEventLoopGroup(worker_threads, factory);
+		this.listeners = new NioEventLoopGroup(spec.getListnerThreadsCount(), factory);
+		this.workers = new NioEventLoopGroup(spec.getReceiverThreadsCount(), factory);
 
-		this.server = this.instantiateServer(address, backlog);
+		this.server = this.instantiateServer(spec);
 		this.client = this.instantiateClient();
 	}
 
@@ -174,7 +168,7 @@ public class TCPManager implements Closeable {
 		this.parent.notifyReceived(id, data, ctx.local, ctx.remote);
 	}
 
-	private ServerBootstrap instantiateServer(InetSocketAddress address, int backlog) {
+	private ServerBootstrap instantiateServer(TCPActivationSpec spec) throws ResourceException {
 
 		ServerBootstrap newServer = new ServerBootstrap();
 		newServer.group(this.listeners, this.workers);
@@ -187,11 +181,13 @@ public class TCPManager implements Closeable {
 			}
 		});
 		newServer.option(ChannelOption.SO_KEEPALIVE, true);
-		newServer.option(ChannelOption.SO_BACKLOG, backlog);
+		newServer.option(ChannelOption.SO_BACKLOG, spec.getBacklog());
 		newServer.option(ChannelOption.TCP_NODELAY, true);
+
+		final InetSocketAddress address = new InetSocketAddress(spec.getLocalAddress(), spec.getLocalPort());
 		newServer.bind(address).addListener(f -> {
 			if (!f.isSuccess()) {
-				TCPManager.log.log(Level.SEVERE, "Binding of TCP Manager failed", f.cause());
+				TCPManager.log.log(Level.SEVERE, "Binding of TCP Manager failed: " + address.toString(), f.cause());
 			}
 		});
 		return newServer;
