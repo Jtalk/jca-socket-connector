@@ -19,7 +19,9 @@ package me.jtalk.socketconnector.io;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -199,7 +201,13 @@ public class TCPManager implements Closeable {
 		Bootstrap newClient = new Bootstrap();
 		newClient.group(this.workers);
 		newClient.channel(NioSocketChannel.class);
-		newClient.handler(c -> c.pipeline().addLast(new Receiver(TCPManager.this)));
+		newClient.handler(new ChannelInitializer<SocketChannel>() {
+
+			@Override
+			protected void initChannel(SocketChannel ch) throws Exception {
+				ch.pipeline().addLast(new Receiver(TCPManager.this));
+			}
+		});
 		newClient.option(ChannelOption.SO_KEEPALIVE, true);
 
 		return newClient;
