@@ -50,6 +50,7 @@ import javax.resource.spi.endpoint.MessageEndpoint;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
+import javax.validation.Validation;
 import javax.validation.Validator;
 
 @Connector(
@@ -71,7 +72,6 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	private final AtomicBoolean running = new AtomicBoolean(false);
 	private final ConcurrentHashMap<Long, TCPManagerStorage> tcpManagers = new ConcurrentHashMap<>();
 
-	@Resource
 	private Validator validator;
 
 	static {
@@ -84,7 +84,8 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	}
 
 	public SocketResourceAdapter() throws IOException {
-		log.info("Soccket resource adapter is instantiated");
+		this.validator = Validation.buildDefaultValidatorFactory().getValidator();
+		log.info(String.format("Soccket resource adapter is instantiated: validator is %s", this.validator == null ? "null" : "instantiated"));
 	}
 
 	@Override
@@ -229,7 +230,11 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	private TCPManager getTCPManager(long clientId) {
 		TCPManagerStorage s = this.tcpManagers.get(clientId);
-		return s.getManager();
+		if (s == null) {
+			return null;
+		} else {
+			return s.getManager();
+		}
 	}
 
 	private <T> void sendEndpoints(long clientId, Method target, T message) {
