@@ -145,7 +145,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	long createTCPConnection(long clientId, InetSocketAddress target) throws ResourceException {
 		TCPManager manager = this.getTCPManager(clientId);
 		if (manager == null) {
-			throw new ConnectionClosedException("Connection is already clised");
+			throw new ConnectionClosedException("Connection is already closed");
 		}
 		return manager.connect(target);
 	}
@@ -153,7 +153,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	void sendTCP(long clientId, long id, ByteBuffer data) throws ResourceException {
 		TCPManager manager = this.getTCPManager(clientId);
 		if (manager == null) {
-			throw new ConnectionClosedException("Connection is already clised");
+			throw new ConnectionClosedException("Connection is already closed");
 		}
 		manager.send(id, data);
 	}
@@ -161,7 +161,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	void closeTCPConnection(long clientId, long id) throws ResourceException {
 		TCPManager manager = this.getTCPManager(clientId);
 		if (manager == null) {
-			throw new ConnectionClosedException("Connection is already clised");
+			throw new ConnectionClosedException("Connection is already closed");
 		}
 		manager.close(id);
 	}
