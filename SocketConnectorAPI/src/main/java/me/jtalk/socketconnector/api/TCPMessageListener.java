@@ -15,13 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector;
+package me.jtalk.socketconnector.api;
 
-import java.net.InetSocketAddress;
+public interface TCPMessageListener {
 
-public interface UDPMessage {
-
-	InetSocketAddress getRemote();
-	InetSocketAddress getLocal();
-	byte[] getData();
+	void onMessage(TCPMessage message);
+	void disconnected(TCPDisconnectionNotification notification);
 }

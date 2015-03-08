@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector;
+package me.jtalk.socketconnector.api;
 
 import java.net.SocketAddress;
 
-class TCPDisconnectionNotificationImpl implements TCPDisconnectionNotification {
+public class TCPDisconnectionNotificationImpl implements TCPDisconnectionNotification {
 
 	private final long connectionId;
 	private final SocketAddress remote;
 	private final SocketAddress local;
 	private final Throwable cause;
 
-	TCPDisconnectionNotificationImpl(long connectionId, SocketAddress remote, SocketAddress local, Throwable cause) {
+	public TCPDisconnectionNotificationImpl(long connectionId, SocketAddress remote, SocketAddress local, Throwable cause) {
 		this.connectionId = connectionId;
 		this.remote = remote;
 		this.local = local;

@@ -15,17 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector;
+package me.jtalk.socketconnector.api;
 
-import java.net.SocketAddress;
+public interface UDPMessageListener {
 
-public interface TCPDisconnectionNotification {
-
-	long getId();
-
-	SocketAddress getRemote();
-	SocketAddress getLocal();
-
-	boolean isError();
-	Throwable getCause();
+	void onMessage(UDPMessage message);
 }

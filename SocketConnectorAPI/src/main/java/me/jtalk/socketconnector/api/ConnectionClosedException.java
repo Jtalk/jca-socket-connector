@@ -15,10 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector;
+package me.jtalk.socketconnector.api;
 
-public interface TCPMessageListener {
+import javax.resource.spi.EISSystemException;
 
-	void onMessage(TCPMessage message);
-	void disconnected(TCPDisconnectionNotification notification);
+public class ConnectionClosedException extends EISSystemException {
+
+	public ConnectionClosedException() {
+	}
+
+	public ConnectionClosedException(String message) {
+		super(message);
+	}
+
+	public ConnectionClosedException(Throwable cause) {
+		super(cause);
+	}
+
+	public ConnectionClosedException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public ConnectionClosedException(String message, String errorCode) {
+		super(message, errorCode);
+	}
 }

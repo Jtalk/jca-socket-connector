@@ -15,19 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector;
+package me.jtalk.socketconnector.api;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-class TCPMessageImpl implements TCPMessage {
+public class TCPMessageImpl implements TCPMessage {
 
 	private final long connectionId;
 	private final SocketAddress remote;
 	private final SocketAddress local;
 	private final byte[] data;
 
-	TCPMessageImpl(long connectionId, SocketAddress remote, SocketAddress local, byte[] data) {
+	public TCPMessageImpl(long connectionId, SocketAddress remote, SocketAddress local, byte[] data) {
 		this.connectionId = connectionId;
 		this.remote = remote;
 		this.local = local;

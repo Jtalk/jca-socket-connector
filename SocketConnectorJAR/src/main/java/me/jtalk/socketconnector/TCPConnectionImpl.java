@@ -17,6 +17,7 @@
 
 package me.jtalk.socketconnector;
 
+import me.jtalk.socketconnector.api.TCPConnection;
 import java.nio.ByteBuffer;
 import javax.resource.ResourceException;
 

@@ -17,7 +17,8 @@
 
 package me.jtalk.socketconnector;
 
-import java.util.logging.Level;
+import me.jtalk.socketconnector.api.TCPMessageListener;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import javax.resource.ResourceException;
 import javax.resource.spi.Activation;
@@ -29,12 +30,12 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import me.jtalk.socketconnector.validation.NetAddress;
 
-@Activation(messageListeners = TCPMessageListener.class)
+@Activation(messageListeners = {TCPMessageListener.class})
 public class TCPActivationSpec implements ActivationSpec {
 
 	private static final Logger log = Logger.getLogger(TCPActivationSpec.class.getName());
 
-	private ResourceAdapter adapter;
+	private final AtomicReference<ResourceAdapter> adapter = new AtomicReference<>();
 
 	@ConfigProperty(
 		description = "Unique connection pool identifier. This value is used "
@@ -86,20 +87,19 @@ public class TCPActivationSpec implements ActivationSpec {
 
 	@Override
 	public void validate() throws InvalidPropertyException {
-	}
 
-	@Override
-	public ResourceAdapter getResourceAdapter() {
-		return this.adapter;
 	}
 
 	@Override
 	public void setResourceAdapter(ResourceAdapter ra) throws ResourceException {
-		log.log(Level.FINE, String.format("%s is assigned to %s", ra.getClass().getName(), TCPActivationSpec.class.getName()));
-		if (this.adapter != null) {
-			throw new javax.resource.spi.IllegalStateException("Resource adapter is associated with ActivationSpec again");
+		if (!this.adapter.compareAndSet(null, ra)) {
+			throw new ResourceException("Adapter must be set only once");
 		}
-		this.adapter = ra;
+	}
+
+	@Override
+	public ResourceAdapter getResourceAdapter() {
+		return this.adapter.get();
 	}
 
 	public long getClientId() {
@@ -132,14 +132,6 @@ public class TCPActivationSpec implements ActivationSpec {
 
 	public void setLocalPort(int localPort) {
 		this.localPort = localPort;
-	}
-
-	public ResourceAdapter getAdapter() {
-		return adapter;
-	}
-
-	public void setAdapter(ResourceAdapter adapter) {
-		this.adapter = adapter;
 	}
 
 	public int getListnerThreadsCount() {

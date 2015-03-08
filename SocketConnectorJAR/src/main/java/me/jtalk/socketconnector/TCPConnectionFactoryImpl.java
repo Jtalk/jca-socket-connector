@@ -17,6 +17,8 @@
 
 package me.jtalk.socketconnector;
 
+import me.jtalk.socketconnector.api.TCPConnectionFactory;
+import me.jtalk.socketconnector.api.TCPConnection;
 import java.net.InetSocketAddress;
 import javax.naming.NamingException;
 import javax.naming.Reference;

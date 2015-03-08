@@ -19,9 +19,7 @@ package me.jtalk.socketconnector.io;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -44,7 +42,7 @@ import java.util.logging.Logger;
 import javax.resource.ResourceException;
 import javax.resource.spi.EISSystemException;
 import javax.resource.spi.ResourceAdapterInternalException;
-import me.jtalk.socketconnector.ConnectionClosedException;
+import me.jtalk.socketconnector.api.ConnectionClosedException;
 import me.jtalk.socketconnector.SocketResourceAdapter;
 import me.jtalk.socketconnector.TCPActivationSpec;
 

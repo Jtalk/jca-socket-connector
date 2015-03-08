@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector;
+package me.jtalk.socketconnector.api;
 
 import java.net.InetSocketAddress;
-import javax.resource.ResourceException;
+import java.nio.ByteBuffer;
 
-public interface UDPConnectionFactory {
+public interface UDPConnection {
 
-	UDPConnection getConnection(InetSocketAddress target) throws ResourceException;
+	void sendTo(InetSocketAddress target, ByteBuffer data);
 }

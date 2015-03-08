@@ -17,6 +17,12 @@
 
 package me.jtalk.socketconnector;
 
+import me.jtalk.socketconnector.api.TCPMessageImpl;
+import me.jtalk.socketconnector.api.TCPDisconnectionNotificationImpl;
+import me.jtalk.socketconnector.api.TCPMessage;
+import me.jtalk.socketconnector.api.ConnectionClosedException;
+import me.jtalk.socketconnector.api.TCPMessageListener;
+import me.jtalk.socketconnector.api.TCPDisconnectionNotification;
 import me.jtalk.socketconnector.io.TCPManager;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -56,7 +62,7 @@ import javax.validation.Validator;
 )
 public class SocketResourceAdapter implements ResourceAdapter {
 
-	private static final Logger log = Logger.getLogger(SocketAddress.class.getName());
+	private static final Logger log = Logger.getLogger(SocketResourceAdapter.class.getName());
 	private static final Method TCP_MESSAGE_DATA_METHOD;
 	private static final Method TCP_MESSAGE_STATUS_METHOD;
 
@@ -83,19 +89,24 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	@Override
 	public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
+		log.info("Starting Socket resource adapter");
 		this.workManager = ctx.getWorkManager();
 		this.running.set(true);
+		log.info("Socket resource adapter is started");
 	}
 
 	@Override
 	public void stop() {
+		log.info("Stopping Socket resource adapter");
 		this.running.set(false);
 		this.stopTCP();
 		this.workManager = null;
+		log.info("Socket resource adapter is stopped");
 	}
 
 	@Override
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) throws ResourceException {
+		log.info("Endpoint activation request received for class " + endpointFactory.getEndpointClass().getCanonicalName());
 		if (!this.running.get()) {
 			throw new ResourceException("This resource adapter is stopped");
 		}
@@ -105,11 +116,13 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		else
 		{
 			this.activateTCP(endpointFactory, (TCPActivationSpec)spec);
+			log.info("Endpoint activated for class " + endpointFactory.getEndpointClass().getCanonicalName());
 		}
 	}
 
 	@Override
 	public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
+		log.info("Endpoint deactivation request received for class " + endpointFactory.getEndpointClass().getCanonicalName());
 		if (!this.running.get()) {
 			log.warning("Endpoint deactivation called on disabled resource adapter");
 			return;
@@ -120,6 +133,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		else
 		{
 			this.deactivateTCP(endpointFactory, (TCPActivationSpec)spec);
+			log.info("Endpoint deactivated for class " + endpointFactory.getEndpointClass().getCanonicalName());
 		}
 	}
 

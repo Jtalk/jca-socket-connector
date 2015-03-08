@@ -17,13 +17,14 @@
 
 package me.jtalk.socketconnector;
 
+import me.jtalk.socketconnector.api.TCPConnectionFactory;
+import me.jtalk.socketconnector.api.TCPConnection;
 import java.io.PrintWriter;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
-import javax.resource.cci.Connection;
-import javax.resource.cci.ConnectionFactory;
 import javax.resource.spi.ConnectionDefinition;
 import javax.resource.spi.ConnectionManager;
 import javax.resource.spi.ConnectionRequestInfo;
@@ -34,20 +35,26 @@ import javax.resource.spi.ResourceAdapterAssociation;
 import javax.security.auth.Subject;
 
 @ConnectionDefinition(
-	connection = Connection.class,
-	connectionImpl = TCPConnection.class,
-	connectionFactory = ConnectionFactory.class,
+	connection = TCPConnection.class,
+	connectionImpl = TCPConnectionImpl.class,
+	connectionFactory = TCPConnectionFactory.class,
 	connectionFactoryImpl = TCPConnectionFactoryImpl.class
 )
 public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, ResourceAdapterAssociation {
 
+	private static final Logger log = Logger.getLogger(ManagedTCPConnectionFactory.class.getName());
 	static final Metadata METADATA = new Metadata();
 
 	private AtomicReference<SocketResourceAdapter> adapter = new AtomicReference<>();
 	private AtomicReference<PrintWriter> logWriter = new AtomicReference<>();
 
+	public ManagedTCPConnectionFactory() {
+		log.info("Managed TCP connection factory instantiated");
+	}
+
 	@Override
 	public Object createConnectionFactory(ConnectionManager cxManager) throws ResourceException {
+		log.info("Managed TCP connection factory received connection factory request");
 		TCPConnectionFactoryImpl factory = new TCPConnectionFactoryImpl(this, cxManager);
 		return factory;
 	}
@@ -59,6 +66,7 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 
 	@Override
 	public ManagedConnection createManagedConnection(Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
+		log.info("Managed TCP connection factory received managed connection request");
 		if (!(cxRequestInfo instanceof NewTCPConnectionRequest)) {
 			throw new ResourceException("Request info provided is not a SocketConnectionRequestInfo");
 		}
@@ -91,6 +99,7 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 
 	@Override
 	public void setResourceAdapter(ResourceAdapter ra) throws ResourceException {
+		log.info("Managed TCP connection factory received adapter assignment request");
 		if (!(ra instanceof SocketResourceAdapter)) {
 			throw new ResourceException("Resource adapter supplied to ManagedSocketConnectionFactory is not a SocketResourceAdapter");
 		}

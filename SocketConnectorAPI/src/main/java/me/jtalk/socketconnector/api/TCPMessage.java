@@ -15,9 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector;
+package me.jtalk.socketconnector.api;
 
-public interface UDPMessageListener {
+import java.net.SocketAddress;
 
-	void onMessage(UDPMessage message);
+public interface TCPMessage {
+
+	long getConnectionId();
+	SocketAddress getRemote();
+	SocketAddress getLocal();
+	byte[] getData();
 }
