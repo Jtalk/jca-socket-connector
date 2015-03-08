@@ -133,6 +133,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		}
 		else
 		{
+			log.info("Endpoint deactivation for class " + endpointFactory.getEndpointClass().getCanonicalName());
 			this.deactivateTCP(endpointFactory, (TCPActivationSpec)spec);
 			log.info("Endpoint deactivated for class " + endpointFactory.getEndpointClass().getCanonicalName());
 		}
@@ -196,10 +197,12 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			long id = spec.getClientId();
 			TCPManagerStorage newStorage = new TCPManagerStorage();
 			TCPManagerStorage storage = this.tcpManagers.putIfAbsent(id, newStorage);
-			if (storage == newStorage) {
+			if (storage == null) {
 				TCPManager manager = new TCPManager(this, id, spec);
-				storage.setManager(manager);
-				storage.setSpec(spec);
+				newStorage.setManager(manager);
+				newStorage.setSpec(spec);
+				newStorage.addEndpoint(factory);
+			} else {
 				storage.addEndpoint(factory);
 			}
 		}
@@ -212,7 +215,10 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			storage.removeEndpoint(factory);
 			if (storage.isEmpty()) {
 				this.tcpManagers.remove(id);
-				storage.getManager().close();
+				TCPManager manager = storage.getManager();
+				if (manager != null) {
+					manager.close();
+				}
 			}
 		}
 	}
@@ -222,7 +228,10 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			Iterator<Map.Entry<Long, TCPManagerStorage>> iter = this.tcpManagers.entrySet().iterator();
 			while (iter.hasNext()) {
 				TCPManagerStorage s = iter.next().getValue();
-				s.getManager().close();
+				TCPManager manager = s.getManager();
+				if (manager != null) {
+					manager.close();
+				}
 				iter.remove();
 			}
 		}
