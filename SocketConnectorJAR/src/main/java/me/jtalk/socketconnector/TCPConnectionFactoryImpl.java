@@ -18,18 +18,23 @@
 package me.jtalk.socketconnector;
 
 import java.net.InetSocketAddress;
+import javax.naming.NamingException;
+import javax.naming.Reference;
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionManager;
 import javax.resource.spi.ResourceAdapterInternalException;
 
-public class TCPConnectionFactoryImpl extends BaseConnectionFactory implements TCPConnectionFactory {
+public class TCPConnectionFactoryImpl implements TCPConnectionFactory {
 
 	private static final long serialVersionUID = 1L;
 
-	protected ManagedTCPConnectionFactory parent;
+	private final ConnectionManager manager;
+	private final ManagedTCPConnectionFactory parent;
+
+	private Reference jndiReference;
 
 	public TCPConnectionFactoryImpl(ManagedTCPConnectionFactory parent, ConnectionManager manager) {
-		super(manager);
+		this.manager = manager;
 		this.parent = parent;
 	}
 
@@ -43,6 +48,16 @@ public class TCPConnectionFactoryImpl extends BaseConnectionFactory implements T
 	public TCPConnection createConnection(long uid, InetSocketAddress target) throws ResourceException {
 		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, target));
 		return check(connObject);
+	}
+
+	@Override
+	public Reference getReference() throws NamingException {
+		return this.jndiReference;
+	}
+
+	@Override
+	public void setReference(Reference reference) {
+		this.jndiReference = reference;
 	}
 
 	private static TCPConnection check(Object obj) throws ResourceException {
