@@ -44,13 +44,13 @@ public class TCPActivationSpec implements ActivationSpec {
 			+ "and all MessageListeners. Once last MessageListener with this identifier "
 			+ "is undeployed, connection pool will be destroyed as well."
 	)
-	private long clientId;
+	private Long clientId;
 
 	@ConfigProperty(
 		description = "TCP keepalive enablement",
 		defaultValue = "true"
 	)
-	private boolean keepalive;
+	private Boolean keepalive;
 
 	@ConfigProperty(
 		description = "IP address to bind to",
@@ -65,25 +65,25 @@ public class TCPActivationSpec implements ActivationSpec {
 	)
 	@Min(0)
 	@Max(65535)
-	private int localPort;
+	private Integer localPort;
 
 	@ConfigProperty(
 		description = "Socket listener threads count",
 		defaultValue = "2"
 	)
-	private int listnerThreadsCount;
+	private Integer listnerThreadsCount;
 
 	@ConfigProperty(
 		description = "Socket receiver threads count",
 		defaultValue = "4"
 	)
-	private int receiverThreadsCount;
+	private Integer receiverThreadsCount;
 
 	@ConfigProperty(
 		description = "TCP listening backlog size",
 		defaultValue = "50"
 	)
-	private int backlog;
+	private Integer backlog;
 
 	@Override
 	public void validate() throws InvalidPropertyException {
@@ -102,19 +102,19 @@ public class TCPActivationSpec implements ActivationSpec {
 		return this.adapter.get();
 	}
 
-	public long getClientId() {
+	public Long getClientId() {
 		return clientId;
 	}
 
-	public void setClientId(long clientId) {
+	public void setClientId(Long clientId) {
 		this.clientId = clientId;
 	}
 
-	public boolean isKeepalive() {
+	public Boolean isKeepalive() {
 		return keepalive;
 	}
 
-	public void setKeepalive(boolean keepalive) {
+	public void setKeepalive(Boolean keepalive) {
 		this.keepalive = keepalive;
 	}
 
@@ -126,35 +126,35 @@ public class TCPActivationSpec implements ActivationSpec {
 		this.localAddress = localAddress;
 	}
 
-	public int getLocalPort() {
+	public Integer getLocalPort() {
 		return localPort;
 	}
 
-	public void setLocalPort(int localPort) {
+	public void setLocalPort(Integer localPort) {
 		this.localPort = localPort;
 	}
 
-	public int getListnerThreadsCount() {
+	public Integer getListnerThreadsCount() {
 		return listnerThreadsCount;
 	}
 
-	public void setListnerThreadsCount(int listnerThreadsCount) {
+	public void setListnerThreadsCount(Integer listnerThreadsCount) {
 		this.listnerThreadsCount = listnerThreadsCount;
 	}
 
-	public int getReceiverThreadsCount() {
+	public Integer getReceiverThreadsCount() {
 		return receiverThreadsCount;
 	}
 
-	public void setReceiverThreadsCount(int receiverThreadsCount) {
+	public void setReceiverThreadsCount(Integer receiverThreadsCount) {
 		this.receiverThreadsCount = receiverThreadsCount;
 	}
 
-	public int getBacklog() {
+	public Integer getBacklog() {
 		return backlog;
 	}
 
-	public void setBacklog(int backlog) {
+	public void setBacklog(Integer backlog) {
 		this.backlog = backlog;
 	}
 }
