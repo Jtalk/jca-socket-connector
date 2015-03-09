@@ -64,8 +64,9 @@ import javax.validation.Validator;
 public class SocketResourceAdapter implements ResourceAdapter {
 
 	private static final Logger log = Logger.getLogger(SocketResourceAdapter.class.getName());
+	private static final Method TCP_MESSAGE_INIT_METHOD;
 	private static final Method TCP_MESSAGE_DATA_METHOD;
-	private static final Method TCP_MESSAGE_STATUS_METHOD;
+	private static final Method TCP_MESSAGE_DISCONNECT_METHOD;
 
 	private WorkManager workManager;
 
@@ -76,10 +77,11 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	static {
 		try {
+			TCP_MESSAGE_INIT_METHOD = TCPMessageListener.class.getMethod("initialized");
 			TCP_MESSAGE_DATA_METHOD = TCPMessageListener.class.getMethod("onMessage", TCPMessage.class);
-			TCP_MESSAGE_STATUS_METHOD = TCPMessageListener.class.getMethod("disconnected", TCPDisconnectionNotification.class);
+			TCP_MESSAGE_DISCONNECT_METHOD = TCPMessageListener.class.getMethod("disconnected", TCPDisconnectionNotification.class);
 		} catch (NoSuchMethodException e) {
-			throw new RuntimeException("Methods onMessage or disconnected not found in TCPMessageListener, poor refactoring?", e);
+			throw new RuntimeException("Methods initialized, onMessage or disconnected not found in TCPMessageListener, poor refactoring?", e);
 		}
 	}
 
@@ -151,7 +153,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	public void notifyShutdown(long clientId, long id, SocketAddress local, SocketAddress remote, Throwable cause) {
 		TCPDisconnectionNotification notification = new TCPDisconnectionNotificationImpl(id, remote, local, cause);
-		this.sendEndpoints(clientId, TCP_MESSAGE_STATUS_METHOD, notification);
+		this.sendEndpoints(clientId, TCP_MESSAGE_DISCONNECT_METHOD, notification);
 	}
 
 	Validator getValidator() {
@@ -205,6 +207,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			} else {
 				storage.addEndpoint(factory);
 			}
+			this.workManager.scheduleWork(new SimpleWork(() -> this.sendEndpoint(factory, TCP_MESSAGE_INIT_METHOD, null)));
 		}
 	}
 
@@ -264,7 +267,11 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			MessageEndpoint endpoint = factory.createEndpoint(null);
 			endpoint.beforeDelivery(target);
 			try {
-				target.invoke(endpoint, message);
+				if (message == null) {
+					target.invoke(endpoint);
+				} else {
+					target.invoke(endpoint, message);
+				}
 			} catch (IllegalAccessException | InvocationTargetException e) {
 				log.log(Level.SEVERE, "Exception on message endpoint invocation", e);
 			}

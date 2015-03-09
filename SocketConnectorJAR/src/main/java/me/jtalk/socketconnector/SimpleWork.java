@@ -15,11 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package me.jtalk.socketconnector.api;
+package me.jtalk.socketconnector;
 
-public interface TCPMessageListener {
+import javax.resource.spi.work.Work;
 
-	void initialized();
-	void onMessage(TCPMessage message);
-	void disconnected(TCPDisconnectionNotification notification);
+public class SimpleWork implements Work {
+
+	private final Runnable task;
+
+	public SimpleWork(Runnable r) {
+		this.task = r;
+	}
+
+	@Override
+	public void run() {
+		this.task.run();
+	}
+
+	@Override
+	public void release() {
+	}
 }
