@@ -20,6 +20,8 @@ package me.jtalk.socketconnector;
 import me.jtalk.socketconnector.api.TCPConnectionFactory;
 import me.jtalk.socketconnector.api.TCPConnection;
 import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -77,7 +79,24 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 
 	@Override
 	public ManagedConnection matchManagedConnections(Set connectionSet, Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
-		throw new NotSupportedException("Managed connections pooling is not supported");
+		Iterator<Object> iter = connectionSet.iterator();
+		if (!iter.hasNext()) {
+			return null;
+		}
+
+		try {
+			ManagedTCPConnectionProxy result = (ManagedTCPConnectionProxy)iter.next();
+			if (cxRequestInfo instanceof NewTCPConnectionRequest) {
+				result.reset((NewTCPConnectionRequest)cxRequestInfo);
+				return result;
+			} else if (cxRequestInfo instanceof ExistingTCPConnectionRequest) {
+				result.reset((ExistingTCPConnectionRequest)cxRequestInfo);
+				return result;
+			}
+
+		} catch (NoSuchElementException e) {}
+
+		return null;
 	}
 
 	@Override

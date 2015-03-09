@@ -47,9 +47,9 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	private static final Logger log = Logger.getLogger(ManagedTCPConnectionProxy.class.getName());
 
 	private long ID = 0;
+	private long clientID = 0;
 
 	private final SocketResourceAdapter adapter;
-	private final NewTCPConnectionRequest info;
 
 	private final AtomicReference<PrintWriter> logWriter = new AtomicReference<>(null);
 	private final AtomicReference<TCPConnectionImpl> connection = new AtomicReference<>(null);
@@ -60,12 +60,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	ManagedTCPConnectionProxy(SocketResourceAdapter adapter, NewTCPConnectionRequest info) throws ResourceException {
 
 		this.adapter = adapter;
-		this.info = info;
-
-		this.validateInfo(info);
-
-		this.ID = adapter.createTCPConnection(info.getUid(), info.createInetAddress());
-		this.isRunning.set(true);
+		this.reset(info);
 	}
 
 	public long getId() {
@@ -78,11 +73,11 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		this.cleanup();
 		this.isRunning.set(false);
-		this.adapter.closeTCPConnection(this.info.getUid(), this.ID);
+		this.adapter.closeTCPConnection(this.clientID, this.ID);
 	}
 
 	public void send(ByteBuffer data) throws ResourceException {
-		this.adapter.sendTCP(this.info.getUid(), this.ID, data);
+		this.adapter.sendTCP(this.clientID, this.ID, data);
 	}
 
 	@Override
@@ -179,6 +174,30 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 	}
 
+	void reset(NewTCPConnectionRequest request) throws ResourceException {
+
+		log.finer("Resetting managed connection proxy for new connection");
+
+		this.validateInfo(request);
+
+		this.clientID = request.getUid();
+		this.ID = this.adapter.createTCPConnection(this.clientID, request.createInetAddress());
+		if (this.isRunning.getAndSet(true)) {
+			log.severe("Managed connection reset while being running");
+		}
+	}
+
+	void reset(ExistingTCPConnectionRequest request) throws ResourceException {
+
+		log.finer("Resetting managed connection proxy for existing connection");
+
+		this.clientID = request.getUid();
+		this.ID = request.getId();
+		if (this.isRunning.getAndSet(true)) {
+			log.severe("Managed connection reset while being running");
+		}
+	}
+
 	private void replaceActiveConnection(TCPConnectionImpl newConnection) {
 
 		log.fine(String.format("Connection replacing request"));
@@ -208,17 +227,19 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	}
 
 	private void checkInfo(ConnectionRequestInfo rawInfo) throws ResourceException {
-		if (this.info.equals(rawInfo)) {
-			return;
-		}
-		if (!(rawInfo instanceof ExistingTCPConnectionRequest)) {
-			this.printLog(String.format("Unknown connection request info %s supplied to ManagedConnection", rawInfo.getClass().getCanonicalName()));
-			throw new ResourceException("Unknown connection request info type");
-		}
-		ExistingTCPConnectionRequest request = (ExistingTCPConnectionRequest)rawInfo;
-		if (request.getId() != this.ID) {
-			this.printLog(String.format("Connection request ID mismatch in ManagedConnection: %d stored, %d requested", this.ID, request.getId()));
-			throw new ResourceException("Requested ID does not match internal one");
+		if (rawInfo instanceof ExistingTCPConnectionRequest) {
+			ExistingTCPConnectionRequest request = (ExistingTCPConnectionRequest)rawInfo;
+			if (request.getUid() != this.clientID || request.getId() != this.ID) {
+				throw new ResourceException("Incompatible UID and ConnectionID supplied to managed connection");
+			}
+		} else if (rawInfo instanceof NewTCPConnectionRequest) {
+			NewTCPConnectionRequest request = (NewTCPConnectionRequest)rawInfo;
+			if (request.getUid() != this.clientID) {
+				throw new ResourceException("Incompatible UID supplied to managed connection");
+			}
+		} else {
+			throw new ResourceException(String.format("Incompatible connection request info type %s supplied to managed connection",
+				rawInfo.getClass().getCanonicalName()));
 		}
 	}
 }
