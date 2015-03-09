@@ -36,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Resource;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
@@ -73,7 +72,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	private final AtomicBoolean running = new AtomicBoolean(false);
 	private final ConcurrentHashMap<Long, TCPManagerStorage> tcpManagers = new ConcurrentHashMap<>();
 
-	private Validator validator;
+	private final Validator validator;
 
 	static {
 		try {
@@ -109,7 +108,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	@Override
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) throws ResourceException {
-		log.info("Endpoint activation request received for class " + endpointFactory.getEndpointClass().getCanonicalName());
+		log.log(Level.INFO, "Endpoint activation request received for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		if (!this.running.get()) {
 			throw new ResourceException("This resource adapter is stopped");
 		}
@@ -119,13 +118,13 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		else
 		{
 			this.activateTCP(endpointFactory, (TCPActivationSpec)spec);
-			log.info("Endpoint activated for class " + endpointFactory.getEndpointClass().getCanonicalName());
+			log.log(Level.INFO, "Endpoint activated for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		}
 	}
 
 	@Override
 	public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
-		log.info("Endpoint deactivation request received for class " + endpointFactory.getEndpointClass().getCanonicalName());
+		log.log(Level.INFO, "Endpoint deactivation request received for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		if (!this.running.get()) {
 			log.warning("Endpoint deactivation called on disabled resource adapter");
 			return;
@@ -135,9 +134,9 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		}
 		else
 		{
-			log.info("Endpoint deactivation for class " + endpointFactory.getEndpointClass().getCanonicalName());
+			log.log(Level.INFO, "Endpoint deactivation for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 			this.deactivateTCP(endpointFactory, (TCPActivationSpec)spec);
-			log.info("Endpoint deactivated for class " + endpointFactory.getEndpointClass().getCanonicalName());
+			log.log(Level.INFO, "Endpoint deactivated for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		}
 	}
 
@@ -194,7 +193,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		return super.equals(obj);
 	}
 
-	private void activateTCP(MessageEndpointFactory factory, TCPActivationSpec spec) throws ResourceException {
+	private void activateTCP(final MessageEndpointFactory factory, TCPActivationSpec spec) throws ResourceException {
 		synchronized(this.tcpManagers) {
 			long id = spec.getClientId();
 			TCPManagerStorage newStorage = new TCPManagerStorage();
