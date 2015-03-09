@@ -69,12 +69,15 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 	@Override
 	public ManagedConnection createManagedConnection(Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
 		log.info("Managed TCP connection factory received managed connection request");
-		if (!(cxRequestInfo instanceof NewTCPConnectionRequest)) {
-			throw new ResourceException("Request info provided is not a SocketConnectionRequestInfo");
+		if (cxRequestInfo instanceof NewTCPConnectionRequest) {
+			ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(this.adapter.get(), (NewTCPConnectionRequest)cxRequestInfo);
+			return newConnection;
+		} else if (cxRequestInfo instanceof ExistingTCPConnectionRequest) {
+			ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(this.adapter.get(), (ExistingTCPConnectionRequest)cxRequestInfo);
+			return newConnection;
+		} else {
+			throw new ResourceException("Info provided is not supported");
 		}
-		NewTCPConnectionRequest info = (NewTCPConnectionRequest)cxRequestInfo;
-		ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(this.adapter.get(), info);
-		return newConnection;
 	}
 
 	@Override
