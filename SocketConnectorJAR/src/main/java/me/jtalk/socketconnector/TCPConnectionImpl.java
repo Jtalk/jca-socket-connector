@@ -55,6 +55,14 @@ public class TCPConnectionImpl implements TCPConnection {
 		}
 	}
 
+	@Override
+	public void close() throws ResourceException {
+		ManagedTCPConnectionProxy local = this.owner;
+		if (local != null) {
+			local.cleanup();
+		}
+	}
+
 	void reassign(ManagedTCPConnectionProxy newOwner) {
 		this.owner = newOwner;
 	}

@@ -22,7 +22,37 @@ import javax.resource.ResourceException;
 
 public interface TCPConnection {
 
+	/**
+	 * Underlying connection ID. This ID is unique per socket and represents
+	 * a physical connection.
+	 * @return Connection ID value.
+	 * @throws ResourceException if TCPConnection is detached from ManagedConnection.
+	 */
 	long getId() throws ResourceException;
+
+	/**
+	 * Sends message to underlying connection.
+	 * @param message binary data to send to socket.
+	 * @throws ConnectionClosedException if socket with ID associated with this
+	 * connection object is already closed.
+	 * @throws ResourceException in case of generic error.
+	 */
 	void send(ByteBuffer message) throws ResourceException;
+
+	/**
+	 * Performs disconnection of the socket with ID associated with this connection
+	 * object. This connection will be detached from it's parent ManagedConnection
+	 * as if close() were called as well.
+	 * @throws ConnectionClosedException if socket with ID associated with this
+	 * connection object is already closed.
+	 * @throws ResourceException in case of generic error.
+	 */
 	void disconnect() throws ResourceException;
+
+	/**
+	 * Detaches this connection object from its underlying ManagedConnection. The
+	 * actual physical connection associated with this ID is not closed (!)
+	 * @throws ResourceException in case of generic error.
+	 */
+	void close() throws ResourceException;
 }
