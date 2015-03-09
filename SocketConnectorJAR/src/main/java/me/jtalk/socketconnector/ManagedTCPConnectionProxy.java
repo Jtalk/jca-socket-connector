@@ -78,7 +78,6 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		log.finer("Connection disconnect requested");
 
 		this.cleanup();
-		this.isRunning.set(false);
 		this.adapter.closeTCPConnection(this.clientID, this.ID);
 	}
 
@@ -121,6 +120,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	public void cleanup() throws ResourceException {
 		log.log(Level.FINEST, "Connection cleanup requested");
 		this.replaceActiveConnection(null);
+		this.isRunning.set(false);
 	}
 
 	@Override
