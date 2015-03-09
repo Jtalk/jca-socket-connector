@@ -20,14 +20,10 @@ package me.jtalk.socketconnector.io;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.util.AttributeKey;
 
 import java.util.logging.Logger;
 
 class Receiver extends ChannelInboundHandlerAdapter {
-
-	public static final String ID_ATTRIBUTE_NAME = "SocketRATCPID";
-	public static final AttributeKey<Long> KEY = AttributeKey.valueOf(ID_ATTRIBUTE_NAME);
 
 	private static final Logger log = Logger.getLogger(Receiver.class.getName());
 

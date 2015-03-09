@@ -19,6 +19,7 @@ package me.jtalk.socketconnector.io;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
@@ -78,13 +79,18 @@ public class TCPManager implements Closeable {
 
 	public long connect(InetSocketAddress target) throws ResourceException {
 		try {
+			log.finest(String.format("Connection initialization to %s: starting", target));
+
 			ChannelFuture completed = this.client.connect(target).sync();
 			if (!completed.isSuccess()) {
 				throw new EISSystemException("Connection failed", completed.cause());
 			}
 			Receiver handler = completed.channel().pipeline().get(Receiver.class);
-			long id = handler.getId();
-			return id;
+			long connId = handler.getId();
+
+			log.finest(String.format("Connection initialization to %s: connection id %d", target, connId));
+
+			return connId;
 
 		} catch (InterruptedException e) {
 			throw new EISSystemException("Execution interrupted during connecting to remote client", e);
@@ -97,29 +103,40 @@ public class TCPManager implements Closeable {
 		if (output == null) {
 			throw new ConnectionClosedException("Connection is already closed");
 		}
-		output.writeAndFlush(data);
+		log.finest(String.format("Data sending to id %d, %d bytes", id, data.remaining()));
+		output.writeAndFlush(Unpooled.wrappedBuffer(data));
+		log.finest(String.format("Data sent to id %d", id));
 	}
 
 	public boolean close(long id) {
+		log.finest(String.format("Connection closing for id %d: requested", id));
 		final ConnectionContext ctx = this.connections.get(id);
 		if (ctx == null) {
+			log.finest(String.format("Connection closing for id %d: no context", id));
 			return false;
 		}
 		ctx.context.disconnect().addListener(f -> {
 			if (!f.isSuccess()) {
 				TCPManager.log.log(Level.SEVERE, "Disconnection failed due to error", f.cause());
+			} else {
+				TCPManager.log.finest(String.format("Connection closing for id %d: closed", id));
 			}
 		});
+		log.finest(String.format("Connection closing for id %d: future fired", id));
 		return true;
 	}
 
 	@Override
 	public void close() {
+		log.finest("Closing TCPManager with all connections");
+
 		this.listeners.shutdownGracefully(0, SHUTDOWN_TIMEOUT_SEC, TimeUnit.SECONDS);
 		this.workers.shutdownGracefully(0, SHUTDOWN_TIMEOUT_SEC, TimeUnit.SECONDS);
 		this.connections.clear();
 		this.contextPool.clear();
 		this.parent = null;
+
+		log.finest("TCPManager successfuly closed");
 	}
 
 	// Receiver callbacks
@@ -177,7 +194,9 @@ public class TCPManager implements Closeable {
 
 			@Override
 			protected void initChannel(SocketChannel c) throws Exception {
-				c.pipeline().addLast(new Receiver(TCPManager.this, TCPManager.this.ids.incrementAndGet()));
+				c.pipeline()
+					.addLast(new Receiver(TCPManager.this, TCPManager.this.ids.incrementAndGet()))
+					.addLast(new Sender());
 			}
 		});
 		newServer.option(ChannelOption.SO_KEEPALIVE, true);
@@ -201,7 +220,9 @@ public class TCPManager implements Closeable {
 
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
-				ch.pipeline().addLast(new Receiver(TCPManager.this, TCPManager.this.ids.incrementAndGet()));
+				ch.pipeline()
+					.addLast(new Receiver(TCPManager.this, TCPManager.this.ids.incrementAndGet()))
+					.addLast(new Sender());
 			}
 		});
 		newClient.option(ChannelOption.SO_KEEPALIVE, true);
