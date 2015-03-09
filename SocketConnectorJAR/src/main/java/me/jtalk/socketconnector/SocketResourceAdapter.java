@@ -38,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
+import javax.resource.cci.Connection;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
 import javax.resource.spi.Connector;
@@ -87,6 +88,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	public SocketResourceAdapter() throws IOException {
 		this.validator = Validation.buildDefaultValidatorFactory().getValidator();
 		log.info(String.format("Soccket resource adapter is instantiated: validator is %s", this.validator == null ? "null" : "instantiated"));
+		log.finest("Verbose logging is enabled");
 	}
 
 	@Override
@@ -160,6 +162,10 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	}
 
 	long createTCPConnection(long clientId, InetSocketAddress target) throws ResourceException {
+
+		log.finest(String.format("TCP connection creation requested for client %d, address %s:%d",
+			clientId, target.getHostString(), target.getPort()));
+
 		TCPManager manager = this.getTCPManager(clientId);
 		if (manager == null) {
 			throw new ConnectionClosedException("Connection is already closed");
@@ -168,6 +174,9 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	}
 
 	void sendTCP(long clientId, long id, ByteBuffer data) throws ResourceException {
+	
+		log.finest(String.format("TCP sending requested for client %d, id %d", clientId, id));
+
 		TCPManager manager = this.getTCPManager(clientId);
 		if (manager == null) {
 			throw new ConnectionClosedException("Connection is already closed");
@@ -176,6 +185,9 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	}
 
 	void closeTCPConnection(long clientId, long id) throws ResourceException {
+
+		log.finest(String.format("TCP closing requested for client %d, id %d", clientId, id));
+
 		TCPManager manager = this.getTCPManager(clientId);
 		if (manager == null) {
 			throw new ConnectionClosedException("Connection is already closed");
@@ -194,39 +206,70 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	}
 
 	private void activateTCP(final MessageEndpointFactory factory, TCPActivationSpec spec) throws ResourceException {
+
+		long id = spec.getClientId();
+
+		log.finest(String.format("TCP activation for client %d: before lock", id));
+
 		synchronized(this.tcpManagers) {
-			long id = spec.getClientId();
+
+			log.finest(String.format("TCP activation for client %d: afteer lock", id));
+
 			TCPManagerStorage newStorage = new TCPManagerStorage();
 			TCPManagerStorage storage = this.tcpManagers.putIfAbsent(id, newStorage);
 			if (storage == null) {
+				log.finest(String.format("TCP activation for client %d: storage not found, inserting new", id));
+
 				TCPManager manager = new TCPManager(this, id, spec);
 				newStorage.setManager(manager);
 				newStorage.setSpec(spec);
 				newStorage.addEndpoint(factory);
 			} else {
+				log.finest(String.format("TCP activation for client %d: storage not found, adding factory", id));
+
 				storage.addEndpoint(factory);
 			}
-			this.workManager.scheduleWork(new SimpleWork(() -> this.sendEndpoint(factory, TCP_MESSAGE_INIT_METHOD, null)));
 		}
+
+		this.workManager.scheduleWork(new SimpleWork(() -> this.sendEndpoint(factory, TCP_MESSAGE_INIT_METHOD, null)));
+
+		log.finest(String.format("TCP activation for client %d: initialization callback is scheduled", id));
 	}
 
 	private void deactivateTCP(MessageEndpointFactory factory, TCPActivationSpec spec) {
+
+		long id = spec.getClientId();
+
+		log.finest(String.format("TCP deactivation for client %d: before lock", id));
+
 		synchronized(this.tcpManagers) {
-			long id = spec.getClientId();
+
+			log.finest(String.format("TCP deactivation for client %d: after lock", id));
+
 			TCPManagerStorage storage = this.tcpManagers.get(id);
 			storage.removeEndpoint(factory);
 			if (storage.isEmpty()) {
+				log.finest(String.format("TCP deactivation for client %d: storage is empty, removing", id));
+
 				this.tcpManagers.remove(id);
 				TCPManager manager = storage.getManager();
 				if (manager != null) {
+					log.finest(String.format("TCP deactivation for client %d: manager is created, closing", id));
 					manager.close();
+				} else {
+					log.finest(String.format("TCP deactivation for client %d: manager is null", id));
 				}
 			}
 		}
 	}
 
 	private void stopTCP() {
+		log.finest("TCP stopping: before lock");
+
 		synchronized(this.tcpManagers) {
+
+			log.finest("TCP stopping: after lock");
+
 			Iterator<Map.Entry<Long, TCPManagerStorage>> iter = this.tcpManagers.entrySet().iterator();
 			while (iter.hasNext()) {
 				TCPManagerStorage s = iter.next().getValue();
@@ -237,13 +280,17 @@ public class SocketResourceAdapter implements ResourceAdapter {
 				iter.remove();
 			}
 		}
+
+		log.finest("TCP stopping: stopped");
 	}
 
 	private TCPManager getTCPManager(long clientId) {
 		TCPManagerStorage s = this.tcpManagers.get(clientId);
 		if (s == null) {
+			log.finest("TCP manager request: not found");
 			return null;
 		} else {
+			log.finest("TCP manager request: found");
 			return s.getManager();
 		}
 	}
@@ -266,11 +313,15 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			MessageEndpoint endpoint = factory.createEndpoint(null);
 			endpoint.beforeDelivery(target);
 			try {
+				log.finer(String.format("Sending endpoint message to %s: prepare", target.getName()));
+
 				if (message == null) {
 					target.invoke(endpoint);
 				} else {
 					target.invoke(endpoint, message);
 				}
+
+				log.finer(String.format("Sending endpoint message to %s: sent", target.getName()));
 			} catch (IllegalAccessException | InvocationTargetException e) {
 				log.log(Level.SEVERE, "Exception on message endpoint invocation", e);
 			}

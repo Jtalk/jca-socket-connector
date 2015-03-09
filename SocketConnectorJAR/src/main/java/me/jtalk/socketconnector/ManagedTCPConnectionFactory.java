@@ -45,11 +45,11 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 	private static final Logger log = Logger.getLogger(ManagedTCPConnectionFactory.class.getName());
 	static final Metadata METADATA = new Metadata();
 
-	private AtomicReference<SocketResourceAdapter> adapter = new AtomicReference<>();
-	private AtomicReference<PrintWriter> logWriter = new AtomicReference<>();
+	private final AtomicReference<SocketResourceAdapter> adapter = new AtomicReference<>();
+	private final AtomicReference<PrintWriter> logWriter = new AtomicReference<>();
 
 	public ManagedTCPConnectionFactory() {
-		log.info("Managed TCP connection factory instantiated");
+		log.fine("Managed TCP connection factory instantiated");
 	}
 
 	@Override

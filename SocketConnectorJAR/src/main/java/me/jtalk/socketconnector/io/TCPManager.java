@@ -125,9 +125,14 @@ public class TCPManager implements Closeable {
 	// Receiver callbacks
 	void connectionEstablished(long id, ChannelHandlerContext ctx) {
 
+		log.finest(String.format("Connection established for id %d: initialization", id));
+
 		ConnectionContext context = this.contextPool.poll();
 		if (context == null) {
+			log.finest(String.format("Connection established for id %d: creating new context", id));
 			context = new ConnectionContext();
+		} else {
+			log.finest(String.format("Connection established for id %d: using existing context from pool", id));
 		}
 
 		context.context = ctx;
@@ -135,6 +140,8 @@ public class TCPManager implements Closeable {
 		context.remote = ctx.channel().remoteAddress();
 
 		this.connections.put(id, context);
+
+		log.finest(String.format("Connection established for id %d: connection added", id));
 	}
 
 	void connectionShutdown(long id, Throwable cause) {

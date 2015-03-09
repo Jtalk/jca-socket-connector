@@ -25,8 +25,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.logging.Logger;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
+import javax.resource.cci.Connection;
 import javax.resource.spi.ConnectionEvent;
 import javax.resource.spi.ConnectionEventListener;
 import javax.resource.spi.ConnectionRequestInfo;
@@ -39,6 +41,8 @@ import javax.validation.ConstraintViolation;
 import javax.validation.groups.Default;
 
 public class ManagedTCPConnectionProxy implements ManagedConnection {
+
+	private static final Logger log = Logger.getLogger(ManagedTCPConnectionProxy.class.getName());
 
 	private long ID = 0;
 
@@ -68,6 +72,8 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	public void disconnect() throws ResourceException {
 
+		log.finer("Connection disconnect requested");
+		
 		this.cleanup();
 		this.isRunning.set(false);
 		this.adapter.closeTCPConnection(this.info.getUid(), this.ID);
@@ -95,16 +101,19 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	@Override
 	public void destroy() throws ResourceException {
+		log.finer("Connection destroyal requested");
 		this.disconnect();
 	}
 
 	@Override
 	public void cleanup() throws ResourceException {
+		log.finer("Connection cleanup requested");
 		this.replaceActiveConnection(null);
 	}
 
 	@Override
 	public void associateConnection(Object connection) throws ResourceException {
+		log.finer("Connection association replacement requested");
 		if (!(connection instanceof TCPConnectionImpl)) {
 			throw new ResourceException("Connection supplied is not a TCPConnectionImpl");
 		}
@@ -112,6 +121,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		TCPConnectionImpl newConnection = (TCPConnectionImpl)connection;
 		newConnection.reassign(this);
 		this.replaceActiveConnection(newConnection);
+		log.finer("Connection association replacement completed");
 	}
 
 	@Override
@@ -151,7 +161,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		return this.logWriter.get();
 	}
 
-	public void log(String message) {
+	public void printLog(String message) {
 		PrintWriter writer = this.logWriter.get();
 		if (writer != null) {
 			writer.print(message);
@@ -160,16 +170,16 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	private void replaceActiveConnection(TCPConnectionImpl newConnection) {
 
+		log.fine(String.format("Connection replacing request"));
+
 		TCPConnectionImpl old = this.connection.getAndSet(newConnection);
 		if (old != null) {
 			old.invalidate();
 		}
 	}
 
-	private void notifyEvent(ConnectionEvent event, BiConsumer<ConnectionEventListener, ConnectionEvent> method) {
-		for (ConnectionEventListener listener : this.eventListeners) {
-			method.accept(listener, event);
-		}
+	private void notifyEvent(ConnectionEvent event, final BiConsumer<ConnectionEventListener, ConnectionEvent> method) {
+		this.eventListeners.forEach(l -> method.accept(l, event));
 	}
 
 	private void validateInfo(NewTCPConnectionRequest info) throws ResourceException {
@@ -180,7 +190,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		for (ConstraintViolation<NewTCPConnectionRequest> violation : violations) {
 			String message = violation.getMessage();
-			this.log(message);
+			this.printLog(message);
 		}
 
 		throw new ResourceException("Socket connection request info constraints violation failed");
@@ -191,12 +201,12 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 			return;
 		}
 		if (!(rawInfo instanceof ExistingTCPConnectionRequest)) {
-			this.log(String.format("Unknown connection request info %s supplied to ManagedConnection", rawInfo.getClass().getCanonicalName()));
+			this.printLog(String.format("Unknown connection request info %s supplied to ManagedConnection", rawInfo.getClass().getCanonicalName()));
 			throw new ResourceException("Unknown connection request info type");
 		}
 		ExistingTCPConnectionRequest request = (ExistingTCPConnectionRequest)rawInfo;
 		if (request.getId() != this.ID) {
-			this.log(String.format("Connection request ID mismatch in ManagedConnection: %d stored, %d requested", this.ID, request.getId()));
+			this.printLog(String.format("Connection request ID mismatch in ManagedConnection: %d stored, %d requested", this.ID, request.getId()));
 			throw new ResourceException("Requested ID does not match internal one");
 		}
 	}

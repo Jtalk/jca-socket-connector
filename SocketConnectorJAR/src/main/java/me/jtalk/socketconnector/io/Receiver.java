@@ -46,22 +46,41 @@ class Receiver extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+
+		log.finest(String.format("Channel data available for id %d for %s -> %s",
+			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
+
 		ByteBuf buffer = (ByteBuf)msg;
 		byte[] data = new byte[buffer.readableBytes()];
 		buffer.readBytes(data);
 		buffer.release();
 		this.manager.dataReceived(this.id, data);
+
+		log.finer(String.format("Channel data (%d bytes) received for id %d for %s -> %s",
+			data.length, this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
 	}
 
 	@Override
 	public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+		log.finer(String.format("Channel unregistering requested for id %d for %s -> %s",
+			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
+
 		this.manager.connectionShutdown(this.id, this.cause);
+
+		log.finer(String.format("Channel unregistered for id %d for %s -> %s",
+			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
 	}
 
 	@Override
 	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+		log.finer(String.format("Channel registering requested for id %d for %s -> %s",
+			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
+
 		this.cause = null;
 		this.manager.connectionEstablished(this.id, ctx);
+
+		log.finer(String.format("Channel registered for id %d for %s -> %s",
+			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
 	}
 
 	@Override
