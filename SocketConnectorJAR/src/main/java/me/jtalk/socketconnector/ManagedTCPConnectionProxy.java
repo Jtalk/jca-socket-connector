@@ -180,7 +180,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 	}
 
-	void reset(NewTCPConnectionRequest request) throws ResourceException {
+	final void reset(NewTCPConnectionRequest request) throws ResourceException {
 
 		log.finer("Resetting managed connection proxy for new connection");
 
@@ -193,7 +193,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 	}
 
-	void reset(ExistingTCPConnectionRequest request) throws ResourceException {
+	final void reset(ExistingTCPConnectionRequest request) throws ResourceException {
 
 		log.finer("Resetting managed connection proxy for existing connection");
 
