@@ -63,6 +63,12 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		this.reset(info);
 	}
 
+	public ManagedTCPConnectionProxy(SocketResourceAdapter adapter, ExistingTCPConnectionRequest info) throws ResourceException {
+
+		this.adapter = adapter;
+		this.reset(info);
+	}
+
 	public long getId() {
 		return this.ID;
 	}
