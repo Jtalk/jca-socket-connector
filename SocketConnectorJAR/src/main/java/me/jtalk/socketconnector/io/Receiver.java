@@ -31,12 +31,17 @@ class Receiver extends ChannelInboundHandlerAdapter {
 
 	private static final Logger log = Logger.getLogger(Receiver.class.getName());
 
-	private long id;
+	private final long id;
 	private final TCPManager manager;
 	private Throwable cause;
 
-	public Receiver(TCPManager manager) {
+	public Receiver(TCPManager manager, long id) {
+		this.id = id;
 		this.manager = manager;
+	}
+
+	public long getId() {
+		return this.id;
 	}
 
 	@Override
@@ -49,15 +54,14 @@ class Receiver extends ChannelInboundHandlerAdapter {
 	}
 
 	@Override
-	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+	public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
 		this.manager.connectionShutdown(this.id, this.cause);
 	}
 
 	@Override
-	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
 		this.cause = null;
-		this.id = this.manager.connectionEstablished(ctx);
-		ctx.attr(KEY).set(this.id);
+		this.manager.connectionEstablished(this.id, ctx);
 	}
 
 	@Override

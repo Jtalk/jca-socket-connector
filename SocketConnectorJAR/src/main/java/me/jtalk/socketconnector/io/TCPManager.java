@@ -82,14 +82,9 @@ public class TCPManager implements Closeable {
 			if (!completed.isSuccess()) {
 				throw new EISSystemException("Connection failed", completed.cause());
 			}
-			Long newId = completed.channel().attr(Receiver.KEY).get();
-			if (newId == null) {
-				throw new ResourceAdapterInternalException("No connection ID stored in channel attributes");
-			}
-			if (!this.connections.contains(newId)) {
-				throw new ResourceException("Connection was closed before initialization completion");
-			}
-			return newId;
+			Receiver handler = completed.channel().pipeline().get(Receiver.class);
+			long id = handler.getId();
+			return id;
 
 		} catch (InterruptedException e) {
 			throw new EISSystemException("Execution interrupted during connecting to remote client", e);
@@ -128,9 +123,7 @@ public class TCPManager implements Closeable {
 	}
 
 	// Receiver callbacks
-	long connectionEstablished(ChannelHandlerContext ctx) {
-
-		long id = this.ids.incrementAndGet();
+	void connectionEstablished(long id, ChannelHandlerContext ctx) {
 
 		ConnectionContext context = this.contextPool.poll();
 		if (context == null) {
@@ -142,8 +135,6 @@ public class TCPManager implements Closeable {
 		context.remote = ctx.channel().remoteAddress();
 
 		this.connections.put(id, context);
-
-		return id;
 	}
 
 	void connectionShutdown(long id, Throwable cause) {
@@ -179,7 +170,7 @@ public class TCPManager implements Closeable {
 
 			@Override
 			protected void initChannel(SocketChannel c) throws Exception {
-				c.pipeline().addLast(new Receiver(TCPManager.this));
+				c.pipeline().addLast(new Receiver(TCPManager.this, TCPManager.this.ids.incrementAndGet()));
 			}
 		});
 		newServer.option(ChannelOption.SO_KEEPALIVE, true);
@@ -203,7 +194,7 @@ public class TCPManager implements Closeable {
 
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
-				ch.pipeline().addLast(new Receiver(TCPManager.this));
+				ch.pipeline().addLast(new Receiver(TCPManager.this, TCPManager.this.ids.incrementAndGet()));
 			}
 		});
 		newClient.option(ChannelOption.SO_KEEPALIVE, true);
