@@ -25,10 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
+import javax.resource.cci.ConnectionFactory;
 import javax.resource.spi.ConnectionEvent;
 import javax.resource.spi.ConnectionEventListener;
 import javax.resource.spi.ConnectionRequestInfo;
@@ -73,11 +75,10 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	public void disconnect() throws ResourceException {
 
 		log.finer("Connection disconnect requested");
-		
+
 		this.cleanup();
 		this.isRunning.set(false);
 		this.adapter.closeTCPConnection(this.info.getUid(), this.ID);
-		this.notifyEvent(new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED), ConnectionEventListener::connectionClosed);
 	}
 
 	public void send(ByteBuffer data) throws ResourceException {
@@ -101,13 +102,23 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	@Override
 	public void destroy() throws ResourceException {
-		log.finer("Connection destroyal requested");
+		log.log(Level.FINEST, "Connection destroyal requested");
 		this.disconnect();
+	}
+
+	void requestCleanup() throws ResourceException {
+		TCPConnectionImpl conn = this.connection.get();
+		if (conn == null) {
+			return;
+		}
+		final ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED);
+		event.setConnectionHandle(conn);
+		this.notifyEvent(event, ConnectionEventListener::connectionClosed);
 	}
 
 	@Override
 	public void cleanup() throws ResourceException {
-		log.finer("Connection cleanup requested");
+		log.log(Level.FINEST, "Connection cleanup requested");
 		this.replaceActiveConnection(null);
 	}
 

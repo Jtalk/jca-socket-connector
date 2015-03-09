@@ -59,7 +59,7 @@ public class TCPConnectionImpl implements TCPConnection {
 	public void close() throws ResourceException {
 		ManagedTCPConnectionProxy local = this.owner;
 		if (local != null) {
-			local.cleanup();
+			local.requestCleanup();
 		}
 	}
 
