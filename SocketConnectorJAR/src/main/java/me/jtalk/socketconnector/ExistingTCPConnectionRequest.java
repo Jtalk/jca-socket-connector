@@ -46,10 +46,7 @@ public class ExistingTCPConnectionRequest implements ConnectionRequestInfo {
 			return false;
 		}
 		final ExistingTCPConnectionRequest other = (ExistingTCPConnectionRequest) obj;
-		if (this.id != other.id) {
-			return false;
-		}
-		return true;
+		return this.id == other.id;
 	}
 
 	@Override

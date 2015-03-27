@@ -44,6 +44,7 @@ import javax.security.auth.Subject;
 )
 public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, ResourceAdapterAssociation {
 
+	private static final long serialVersionUID = 0L;
 	private static final Logger log = Logger.getLogger(ManagedTCPConnectionFactory.class.getName());
 	static final Metadata METADATA = new Metadata();
 
