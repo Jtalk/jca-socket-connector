@@ -20,7 +20,7 @@ package me.jtalk.socketconnector.api;
 import java.nio.ByteBuffer;
 import javax.resource.ResourceException;
 
-public interface TCPConnection {
+public interface TCPConnection extends AutoCloseable {
 
 	/**
 	 * Underlying connection ID. This ID is unique per socket and represents
@@ -54,5 +54,6 @@ public interface TCPConnection {
 	 * actual physical connection associated with this ID is not closed (!)
 	 * @throws ResourceException in case of generic error.
 	 */
+	@Override
 	void close() throws ResourceException;
 }
