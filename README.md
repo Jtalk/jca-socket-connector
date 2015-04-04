@@ -45,6 +45,7 @@ There are several steps to make your network application run:
 # TCPMessageListener configuration #
 
 TCPMessageListener can be configured with several options (via @Activation annotation or a deployment descriptor):
+
 * clientId: application server-unique connection pool id. GUID is suggested. You're advised to generate it once and store somewhere in your application code. This is a mandatory parameter.
 * keepalive: TCP keepalive flag. Enabled by default.
 * localAddress: local IP address to bind to. 0.0.0.0 by default.
