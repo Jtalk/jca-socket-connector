@@ -41,3 +41,14 @@ There are several steps to make your network application run:
 * TCPConnection allows you to send byte sequences through the underlying TCP socket. Replies will be delivered through TCPMessageListener. Connection ID can be used to correlate TCPConnection instance with a message delivered through the message-driven bean. 
 * Calling TCPConnection.disconnect shuts the underlying socket down. All connection object pointing to that particular socket will be invalidated and will throw ConnectionClosedException on every operation attempt.
 * Calling TCPConnection.close will release this connection object for reuse, still, underlying connection is NOT closed. This connector is created for persistent connections handling and is not supposed to be used as single-send object (open/send/disconect sequence).
+
+# TCPMessageListener configuration #
+
+TCPMessageListener can be configured with several options (via @Activation annotation or a deployment descriptor):
+* clientId: application server-unique connection pool id. GUID is suggested. You're advised to generate it once and store somewhere in your application code. This is a mandatory parameter.
+* keepalive: TCP keepalive flag. Enabled by default.
+* localAddress: local IP address to bind to. 0.0.0.0 by default.
+* localPort: port to bind to. 0 by default (i.e. random port).
+* listnerThreadsCount: number of threads Netty is allowed to use for TCP connections listening. 2 by default.
+* receiverThreadsCount: number of threads Netty is allowed to use for regular TCP IO. 4 by default.
+* backlog: TCP backlog size. 50 by default.
