@@ -1,6 +1,6 @@
 # Overview #
 
-This is a JCA 1.6 resource adapter for async networking IO. In opposite to JCA-Sockets project, SocketConnector is JCA-compliant. Current version allows asynchronous TCP operations via Netty IO engine. This project may also be treated as a JCA reference project utilizing all the major parts of the Java Connectors Architecture. 
+This is a JCA 1.6 resource adapter for async networking IO. In opposite to JCA-Sockets project, SocketConnector is JCA-compliant. Current version allows asynchronous TCP operations via Netty IO engine. This project may also be treated as a JCA reference project utilizing all the major parts of the Java Connectors Architecture. [SocketConnectorTester](https://bitbucket.org/__jtalk/socketconnectortester) is a sample application using this connector.
 
 # Current status #
 
