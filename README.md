@@ -15,14 +15,13 @@ This project is written and tested for WildFly 8.2 AS. It includes a deployment 
 SocketConnector structure consists of several sub-projects:
 
 * SocketConnectorAPI. This must be laid to the application server classpath or, in case of JBoss, be installed as module. This jar contains API interfaces used by both resource adapter and end-user EJB's. One should declare this module as a dependency in his project's manifest. API jar also contains @NetAddress validation annotation for activation spec validation.
-
 * SocketConnectorJAR. This is an actual resource adapter implementation. It should be included into RAR and deployed to the application server.
-
 * SocketConnectorRAR. This is a resource adapter archive wrapper upon the SocketConnectorJAR. SocketConnectorRAR.rar should be deployed to the application server for this connector to work.
 
 # Deployment #
 
 Here's the JBoss/WildFly deployment process:
+
 * Create a me.jtalk.socketconnector.api module containing SocketConnectorAPI jar (it's suggested to use bin/jboss-cli interface).
 * Deploy SocketConnectorRAR to the application server.
 * TCPConnectionFactory is not accessible through java:/socket/TCP name in default JNDI context.
