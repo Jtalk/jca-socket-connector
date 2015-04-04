@@ -57,7 +57,7 @@ class Receiver extends ChannelInboundHandlerAdapter {
 	}
 
 	@Override
-	public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		log.finer(String.format("Channel unregistering requested for id %d for %s -> %s",
 			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
 
@@ -68,7 +68,7 @@ class Receiver extends ChannelInboundHandlerAdapter {
 	}
 
 	@Override
-	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		log.finer(String.format("Channel registering requested for id %d for %s -> %s",
 			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
 
