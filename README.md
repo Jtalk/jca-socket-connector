@@ -8,7 +8,7 @@ SocketConnector now only supports TCP interactions. UDP support is planned but n
 
 # Application server #
 
-This project is written and tested for WildFly 8.2 AS. It includes a deployment descriptor for IronJacamar JCA container as WildFly seems not to support connectors configuration right. By default in IronJacamar-driven environments TCP connection factory will be bound to java:/socket/TCP JNDI path.
+This project is written and tested for WildFly 8.2. It includes a deployment descriptor for IronJacamar JCA container as WildFly seems not to support connectors configuration right. By default in IronJacamar-driven environments TCP connection factory will be bound to java:/socket/TCP JNDI path.
 
 # Structure overview #
 
