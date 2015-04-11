@@ -52,6 +52,7 @@ import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
 import javax.validation.Validation;
 import javax.validation.Validator;
+import me.jtalk.socketconnector.api.UnknownClientException;
 
 @Connector(
 	displayName = Metadata.NAME,
@@ -166,21 +167,15 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		log.finest(String.format("TCP connection creation requested for client %d, address %s:%d",
 			clientId, target.getHostString(), target.getPort()));
 
-		TCPManager manager = this.getTCPManager(clientId);
-		if (manager == null) {
-			throw new ConnectionClosedException("Connection is already closed");
-		}
+		TCPManager manager = this.getTCPManagerChecked(clientId);
 		return manager.connect(target);
 	}
 
 	void sendTCP(long clientId, long id, ByteBuffer data) throws ResourceException {
-	
+
 		log.finest(String.format("TCP sending requested for client %d, id %d", clientId, id));
 
-		TCPManager manager = this.getTCPManager(clientId);
-		if (manager == null) {
-			throw new ConnectionClosedException("Connection is already closed");
-		}
+		TCPManager manager = this.getTCPManagerChecked(clientId);
 		manager.send(id, data);
 	}
 
@@ -188,10 +183,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 		log.finest(String.format("TCP closing requested for client %d, id %d", clientId, id));
 
-		TCPManager manager = this.getTCPManager(clientId);
-		if (manager == null) {
-			throw new ConnectionClosedException("Connection is already closed");
-		}
+		TCPManager manager = this.getTCPManagerChecked(clientId);
 		manager.close(id);
 	}
 
@@ -331,6 +323,15 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			log.log(Level.SEVERE, "Message endpoint is unavailable", e);
 		} catch (ResourceException | NoSuchMethodException e) {
 			log.log(Level.SEVERE, "Exception on message endpoint processing", e);
+		}
+	}
+
+	private TCPManager getTCPManagerChecked(long clientId) throws UnknownClientException {
+		TCPManager m = this.getTCPManager(clientId);
+		if (m == null) {
+			throw new UnknownClientException();
+		} else {
+			return m;
 		}
 	}
 }
