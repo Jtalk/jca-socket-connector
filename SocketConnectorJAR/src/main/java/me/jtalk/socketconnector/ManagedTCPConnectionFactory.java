@@ -103,6 +103,8 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 		return null;
 	}
 
+
+
 	@Override
 	public void setLogWriter(PrintWriter out) throws ResourceException {
 		if (!this.logWriter.compareAndSet(null, out)) {
@@ -116,7 +118,7 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 	}
 
 	@Override
-	public ResourceAdapter getResourceAdapter() {
+	public SocketResourceAdapter getResourceAdapter() {
 		return this.adapter.get();
 	}
 
