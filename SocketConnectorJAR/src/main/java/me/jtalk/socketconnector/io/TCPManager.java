@@ -42,7 +42,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.resource.ResourceException;
 import javax.resource.spi.EISSystemException;
-import javax.resource.spi.ResourceAdapterInternalException;
 import me.jtalk.socketconnector.api.ConnectionClosedException;
 import me.jtalk.socketconnector.SocketResourceAdapter;
 import me.jtalk.socketconnector.TCPActivationSpec;
@@ -61,7 +60,6 @@ public class TCPManager implements Closeable {
 	private final Bootstrap client;
 
 	private final ConcurrentHashMap<Long, ConnectionContext> connections = new ConcurrentHashMap<>();
-	private final ConcurrentLinkedQueue<ConnectionContext> contextPool = new ConcurrentLinkedQueue<>();
 	private final AtomicLong ids = new AtomicLong(0);
 
 	public TCPManager(SocketResourceAdapter parent, long id, TCPActivationSpec spec) throws ResourceException {
@@ -101,7 +99,7 @@ public class TCPManager implements Closeable {
 		ConnectionContext ctx = this.connections.get(id);
 		ChannelHandlerContext output = ctx.context;
 		if (output == null) {
-			throw new ConnectionClosedException("Connection is already closed");
+			throw new ConnectionClosedException("Connection is closed");
 		}
 		log.finest(String.format("Data sending to id %d, %d bytes", id, data.remaining()));
 		output.writeAndFlush(Unpooled.wrappedBuffer(data));
@@ -133,7 +131,6 @@ public class TCPManager implements Closeable {
 		this.listeners.shutdownGracefully(0, SHUTDOWN_TIMEOUT_SEC, TimeUnit.SECONDS);
 		this.workers.shutdownGracefully(0, SHUTDOWN_TIMEOUT_SEC, TimeUnit.SECONDS);
 		this.connections.clear();
-		this.contextPool.clear();
 		this.parent = null;
 
 		log.finest("TCPManager successfuly closed");
@@ -142,19 +139,8 @@ public class TCPManager implements Closeable {
 	// Receiver callbacks
 	void connectionEstablished(long id, ChannelHandlerContext ctx) {
 
-		log.finest(String.format("Connection established for id %d: initialization", id));
-
-		ConnectionContext context = this.contextPool.poll();
-		if (context == null) {
-			log.finest(String.format("Connection established for id %d: creating new context", id));
-			context = new ConnectionContext();
-		} else {
-			log.finest(String.format("Connection established for id %d: using existing context from pool", id));
-		}
-
-		context.context = ctx;
-		context.local = ctx.channel().localAddress();
-		context.remote = ctx.channel().remoteAddress();
+		log.finest(String.format("Connection established for id %d: creating new context", id));
+		ConnectionContext context = new ConnectionContext(ctx, ctx.channel().localAddress(), ctx.channel().remoteAddress());
 
 		this.connections.put(id, context);
 
@@ -170,8 +156,6 @@ public class TCPManager implements Closeable {
 		if (ctx != null) {
 			local = ctx.local;
 			remote = ctx.remote;
-			ctx.clear();
-			this.contextPool.add(ctx);
 		}
 		this.parent.notifyShutdown(this.id, id, local, remote, cause);
 	}

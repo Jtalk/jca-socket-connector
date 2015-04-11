@@ -22,16 +22,13 @@ import java.net.SocketAddress;
 
 class ConnectionContext {
 
-	public ChannelHandlerContext context = null;
-	public SocketAddress local = null;
-	public SocketAddress remote = null;
+	public final ChannelHandlerContext context;
+	public final SocketAddress local;
+	public final SocketAddress remote;
 
-	public ConnectionContext() {
-	}
-
-	public void clear() {
-		this.context = null;
-		this.local = null;
-		this.remote = null;
+	public ConnectionContext(ChannelHandlerContext ctx, SocketAddress local, SocketAddress remote) {
+		this.context = ctx;
+		this.local = local;
+		this.remote = remote;
 	}
 }
