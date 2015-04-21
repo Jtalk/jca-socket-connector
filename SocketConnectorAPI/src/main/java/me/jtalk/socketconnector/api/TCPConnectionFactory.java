@@ -26,4 +26,5 @@ public interface TCPConnectionFactory extends Serializable, Referenceable {
 
 	TCPConnection getConnection(long uid, long connectionId) throws ResourceException;
 	TCPConnection createConnection(long uid, InetSocketAddress target) throws ResourceException;
+	TCPConnection listen(long uid, InetSocketAddress address) throws ResourceException;
 }
