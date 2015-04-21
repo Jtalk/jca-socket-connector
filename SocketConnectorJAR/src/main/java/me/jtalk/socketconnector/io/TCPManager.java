@@ -20,6 +20,7 @@ package me.jtalk.socketconnector.io;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
@@ -87,6 +88,7 @@ public class TCPManager implements Closeable {
 			long connId = handler.getId();
 
 			log.finest(String.format("Connection initialization to %s: connection id %d", target, connId));
+			this.register(connId, completed.channel(), false);
 
 			return connId;
 
@@ -95,15 +97,41 @@ public class TCPManager implements Closeable {
 		}
 	}
 
+	public long listen(InetSocketAddress local) throws ResourceException {
+		try {
+			log.finest(String.format("Listening to %s: starting", local));
+
+			ChannelFuture completed = this.server.bind(local).sync();
+			if (!completed.isSuccess()) {
+				throw new EISSystemException("Listening failed", completed.cause());
+			}
+			Receiver handler = completed.channel().pipeline().get(Receiver.class);
+			long connId = handler.getId();
+
+			log.finest(String.format("Listening to %s: connection id %d", local, connId));
+			this.register(connId, completed.channel(), true);
+
+			return connId;
+
+		} catch (InterruptedException e) {
+			throw new EISSystemException("Execution interrupted during listening setup", e);
+		}
+	}
+
 	public void send(long id, ByteBuffer data) throws ResourceException {
 		ConnectionContext ctx = this.connections.get(id);
-		ChannelHandlerContext output = ctx.context;
+		Channel output = ctx.channel;
 		if (output == null) {
 			throw new ConnectionClosedException("Connection is closed");
 		}
 		log.finest(String.format("Data sending to id %d, %d bytes", id, data.remaining()));
-		output.writeAndFlush(Unpooled.wrappedBuffer(data));
-		log.finest(String.format("Data sent to id %d", id));
+		output.writeAndFlush(Unpooled.wrappedBuffer(data)).addListener(f -> {
+			if (f.isSuccess()) {
+				log.finest(String.format("Data sent to id %d", id));
+			} else {
+				log.log(Level.FINE, "Error while sending data to id {0}: {1}", new Object[] {id, f.cause()});
+			}
+		});
 	}
 
 	public boolean close(long id) {
@@ -113,7 +141,7 @@ public class TCPManager implements Closeable {
 			log.finest(String.format("Connection closing for id %d: no context", id));
 			return false;
 		}
-		ctx.context.disconnect().addListener(f -> {
+		ctx.channel.disconnect().addListener(f -> {
 			if (!f.isSuccess()) {
 				TCPManager.log.log(Level.SEVERE, "Disconnection failed due to error", f.cause());
 			} else {
@@ -136,17 +164,25 @@ public class TCPManager implements Closeable {
 		log.finest("TCPManager successfuly closed");
 	}
 
-	// Receiver callbacks
-	void connectionEstablished(long id, ChannelHandlerContext ctx) {
+	public boolean isListening(long id) throws ResourceException {
+		ConnectionContext ctx = this.connections.get(id);
+		if (ctx == null) {
+			throw new ConnectionClosedException("Connection is closed");
+		}
+		return ctx.listening;
+	}
+
+	void register(long id, Channel channel, boolean listening) {
 
 		log.finest(String.format("Connection established for id %d: creating new context", id));
-		ConnectionContext context = new ConnectionContext(ctx, ctx.channel().localAddress(), ctx.channel().remoteAddress());
+		ConnectionContext context = new ConnectionContext(channel, channel.localAddress(), channel.remoteAddress(), listening);
 
 		this.connections.put(id, context);
 
 		log.finest(String.format("Connection established for id %d: connection added", id));
 	}
 
+	// Receiver callbacks
 	void connectionShutdown(long id, Throwable cause) {
 
 		ConnectionContext ctx = this.connections.remove(id);
@@ -187,12 +223,6 @@ public class TCPManager implements Closeable {
 		newServer.option(ChannelOption.SO_BACKLOG, spec.getBacklog());
 		newServer.option(ChannelOption.TCP_NODELAY, true);
 
-		final InetSocketAddress address = new InetSocketAddress(spec.getLocalAddress(), spec.getLocalPort());
-		newServer.bind(address).addListener(f -> {
-			if (!f.isSuccess()) {
-				TCPManager.log.log(Level.SEVERE, "Binding of TCP Manager failed: " + address.toString(), f.cause());
-			}
-		});
 		return newServer;
 	}
 

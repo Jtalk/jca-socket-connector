@@ -17,18 +17,20 @@
 
 package me.jtalk.socketconnector.io;
 
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.Channel;
 import java.net.SocketAddress;
 
 class ConnectionContext {
 
-	public final ChannelHandlerContext context;
+	public final Channel channel;
 	public final SocketAddress local;
 	public final SocketAddress remote;
+	public final boolean listening;
 
-	public ConnectionContext(ChannelHandlerContext ctx, SocketAddress local, SocketAddress remote) {
-		this.context = ctx;
+	public ConnectionContext(Channel channel, SocketAddress local, SocketAddress remote, boolean listening) {
+		this.channel = channel;
 		this.local = local;
 		this.remote = remote;
+		this.listening = listening;
 	}
 }
