@@ -18,6 +18,7 @@
 package me.jtalk.socketconnector.api;
 
 import java.nio.ByteBuffer;
+import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 
 public interface TCPConnection extends AutoCloseable {
@@ -35,9 +36,10 @@ public interface TCPConnection extends AutoCloseable {
 	 * @param message binary data to send to socket.
 	 * @throws ConnectionClosedException if socket with ID associated with this
 	 * connection object is already closed.
+	 * @throws NotSupportedException if called on listening connection
 	 * @throws ResourceException in case of generic error.
 	 */
-	void send(ByteBuffer message) throws ResourceException;
+	void send(ByteBuffer message) throws NotSupportedException, ResourceException;
 
 	/**
 	 * Performs disconnection of the socket with ID associated with this connection
