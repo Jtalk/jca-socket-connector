@@ -73,6 +73,7 @@ class Receiver extends ChannelInboundHandlerAdapter {
 			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));
 
 		this.cause = null;
+		this.manager.register(this.id, ctx.channel(), false);
 
 		log.finer(String.format("Channel registered for id %d for %s -> %s",
 			this.id, ctx.channel().localAddress(), ctx.channel().remoteAddress()));

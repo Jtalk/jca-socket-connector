@@ -22,7 +22,6 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -35,7 +34,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -87,9 +85,6 @@ public class TCPManager implements Closeable {
 			Receiver handler = completed.channel().pipeline().get(Receiver.class);
 			long connId = handler.getId();
 
-			log.finest(String.format("Connection initialization to %s: connection id %d", target, connId));
-			this.register(connId, completed.channel(), false);
-
 			return connId;
 
 		} catch (InterruptedException e) {
@@ -105,8 +100,7 @@ public class TCPManager implements Closeable {
 			if (!completed.isSuccess()) {
 				throw new EISSystemException("Listening failed", completed.cause());
 			}
-			Receiver handler = completed.channel().pipeline().get(Receiver.class);
-			long connId = handler.getId();
+			long connId = this.ids.incrementAndGet();
 
 			log.finest(String.format("Listening to %s: connection id %d", local, connId));
 			this.register(connId, completed.channel(), true);
@@ -200,8 +194,10 @@ public class TCPManager implements Closeable {
 		ConnectionContext ctx = this.connections.get(id);
 		if (ctx == null) {
 			// Drop data from closed connection
+			log.finest(String.format("No context for id %s", id));
 			return;
 		}
+		log.finest(String.format("Context for id %s found, data will be received", id));
 		this.parent.notifyReceived(this.id, id, data, ctx.local, ctx.remote);
 	}
 
