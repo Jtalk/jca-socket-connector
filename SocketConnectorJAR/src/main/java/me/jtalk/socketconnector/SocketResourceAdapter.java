@@ -171,6 +171,15 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		return manager.connect(target);
 	}
 
+	long listenTCP(long clientId, InetSocketAddress local) throws ResourceException {
+
+		log.finest(String.format("TCP listening requested for client %d, address %s:%d",
+			clientId, local.getHostString(), local.getPort()));
+
+		TCPManager manager = this.getTCPManagerChecked(clientId);
+		return manager.listen(local);
+	}
+
 	void sendTCP(long clientId, long id, ByteBuffer data) throws ResourceException {
 
 		log.finest(String.format("TCP sending requested for client %d, id %d", clientId, id));
@@ -185,6 +194,14 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 		TCPManager manager = this.getTCPManagerChecked(clientId);
 		manager.close(id);
+	}
+
+	boolean isTCPListener(long clientId, long id) throws ResourceException {
+
+		log.finest(String.format("TCP listening state requested for client %d, id %d", clientId, id));
+
+		TCPManager manager = this.getTCPManagerChecked(clientId);
+		return manager.isListening(id);
 	}
 
 	@Override

@@ -48,7 +48,13 @@ public class TCPConnectionFactoryImpl implements TCPConnectionFactory {
 
 	@Override
 	public TCPConnection createConnection(long uid, InetSocketAddress target) throws ResourceException {
-		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, target));
+		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, target, false));
+		return check(connObject);
+	}
+
+	@Override
+	public TCPConnection listen(long uid, InetSocketAddress address) throws ResourceException {
+		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, address, true));
 		return check(connObject);
 	}
 

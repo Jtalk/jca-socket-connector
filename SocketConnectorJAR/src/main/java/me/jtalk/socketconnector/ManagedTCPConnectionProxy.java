@@ -29,8 +29,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
-import javax.resource.cci.Connection;
-import javax.resource.cci.ConnectionFactory;
 import javax.resource.spi.ConnectionEvent;
 import javax.resource.spi.ConnectionEventListener;
 import javax.resource.spi.ConnectionRequestInfo;
@@ -48,6 +46,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	private long ID = 0;
 	private long clientID = 0;
+	private boolean listening = false;
 
 	private final SocketResourceAdapter adapter;
 
@@ -82,7 +81,11 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	}
 
 	public void send(ByteBuffer data) throws ResourceException {
-		this.adapter.sendTCP(this.clientID, this.ID, data);
+		if (this.listening) {
+			throw new NotSupportedException("Sending data through listening socket");
+		} else {
+			this.adapter.sendTCP(this.clientID, this.ID, data);
+		}
 	}
 
 	@Override
@@ -104,16 +107,6 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	public void destroy() throws ResourceException {
 		log.log(Level.FINEST, "Connection destroyal requested");
 		this.disconnect();
-	}
-
-	void requestCleanup() throws ResourceException {
-		TCPConnectionImpl conn = this.connection.get();
-		if (conn == null) {
-			return;
-		}
-		final ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED);
-		event.setConnectionHandle(conn);
-		this.notifyEvent(event, ConnectionEventListener::connectionClosed);
 	}
 
 	@Override
@@ -180,6 +173,16 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 	}
 
+	void requestCleanup() throws ResourceException {
+		TCPConnectionImpl conn = this.connection.get();
+		if (conn == null) {
+			return;
+		}
+		final ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED);
+		event.setConnectionHandle(conn);
+		this.notifyEvent(event, ConnectionEventListener::connectionClosed);
+	}
+
 	final void reset(NewTCPConnectionRequest request) throws ResourceException {
 
 		log.finer("Resetting managed connection proxy for new connection");
@@ -187,7 +190,12 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		this.validateInfo(request);
 
 		this.clientID = request.getUid();
-		this.ID = this.adapter.createTCPConnection(this.clientID, request.createInetAddress());
+		this.listening = request.isListening();
+		if (request.isListening()) {
+			this.ID = this.adapter.listenTCP(this.clientID, request.createInetAddress());
+		} else {
+			this.ID = this.adapter.createTCPConnection(this.clientID, request.createInetAddress());
+		}
 		if (this.isRunning.getAndSet(true)) {
 			log.severe("Managed connection reset while being running");
 		}
@@ -199,6 +207,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		this.clientID = request.getUid();
 		this.ID = request.getId();
+		this.listening = this.adapter.isTCPListener(request.getUid(), request.getId());
 		if (this.isRunning.getAndSet(true)) {
 			log.severe("Managed connection reset while being running");
 		}
