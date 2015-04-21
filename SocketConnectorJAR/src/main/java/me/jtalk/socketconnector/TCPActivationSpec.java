@@ -53,21 +53,6 @@ public class TCPActivationSpec implements ActivationSpec {
 	private Boolean keepalive;
 
 	@ConfigProperty(
-		description = "IP address to bind to",
-		defaultValue = "0.0.0.0"
-	)
-	@NetAddress
-	private String localAddress;
-
-	@ConfigProperty(
-		description = "Local port to bind to",
-		defaultValue = "0"
-	)
-	@Min(0)
-	@Max(65535)
-	private Integer localPort;
-
-	@ConfigProperty(
 		description = "Socket listener threads count",
 		defaultValue = "2"
 	)
@@ -116,22 +101,6 @@ public class TCPActivationSpec implements ActivationSpec {
 
 	public void setKeepalive(Boolean keepalive) {
 		this.keepalive = keepalive;
-	}
-
-	public String getLocalAddress() {
-		return localAddress;
-	}
-
-	public void setLocalAddress(String localAddress) {
-		this.localAddress = localAddress;
-	}
-
-	public Integer getLocalPort() {
-		return localPort;
-	}
-
-	public void setLocalPort(Integer localPort) {
-		this.localPort = localPort;
 	}
 
 	public Integer getListnerThreadsCount() {
