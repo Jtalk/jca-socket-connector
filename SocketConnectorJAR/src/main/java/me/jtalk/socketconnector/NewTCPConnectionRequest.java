@@ -37,10 +37,13 @@ class NewTCPConnectionRequest implements ConnectionRequestInfo {
 	@Max(65535)
 	private final int port;
 
-	public NewTCPConnectionRequest(long uid, InetSocketAddress address) {
+	private final boolean listening;
+
+	public NewTCPConnectionRequest(long uid, InetSocketAddress address, boolean listening) {
 		this.uid = uid;
 		this.address = address.getHostString();
 		this.port = address.getPort();
+		this.listening = listening;
 	}
 
 	public long getUid() {
@@ -59,6 +62,10 @@ class NewTCPConnectionRequest implements ConnectionRequestInfo {
 		return new InetSocketAddress(this.address, this.port);
 	}
 
+	public boolean isListening() {
+		return this.listening;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {
@@ -74,14 +81,18 @@ class NewTCPConnectionRequest implements ConnectionRequestInfo {
 		if (this.port != other.port) {
 			return false;
 		}
+		if (this.listening != other.listening) {
+			return false;
+		}
 		return true;
 	}
 
 	@Override
 	public int hashCode() {
-		int hash = 5;
-		hash = 79 * hash + Objects.hashCode(this.address);
-		hash = 79 * hash + this.port;
+		int hash = 3;
+		hash = 97 * hash + Objects.hashCode(this.address);
+		hash = 97 * hash + this.port;
+		hash = 97 * hash + (this.listening ? 1 : 0);
 		return hash;
 	}
 }
