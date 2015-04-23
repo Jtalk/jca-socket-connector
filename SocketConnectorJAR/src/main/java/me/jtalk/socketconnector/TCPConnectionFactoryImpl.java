@@ -42,20 +42,17 @@ public class TCPConnectionFactoryImpl implements TCPConnectionFactory {
 
 	@Override
 	public TCPConnection getConnection(long uid, long connectionId) throws ResourceException {
-		Object connObject = this.manager.allocateConnection(this.parent, new ExistingTCPConnectionRequest(uid, connectionId));
-		return check(connObject);
+		return safePerform(() -> (TCPConnection)this.manager.allocateConnection(this.parent, new ExistingTCPConnectionRequest(uid, connectionId)));
 	}
 
 	@Override
 	public TCPConnection createConnection(long uid, InetSocketAddress target) throws ResourceException {
-		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, target, false));
-		return check(connObject);
+		return safePerform(() -> (TCPConnection)this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, target, false)));
 	}
 
 	@Override
 	public TCPConnection listen(long uid, InetSocketAddress address) throws ResourceException {
-		Object connObject = this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, address, true));
-		return check(connObject);
+		return safePerform(() -> (TCPConnection)this.manager.allocateConnection(this.parent, new NewTCPConnectionRequest(uid, address, true)));
 	}
 
 	@Override
@@ -68,10 +65,27 @@ public class TCPConnectionFactoryImpl implements TCPConnectionFactory {
 		this.jndiReference = reference;
 	}
 
+	private static TCPConnection safePerform(ConnectionSupplier s) throws ResourceException {
+		try {
+			return s.get();
+		} catch (ResourceException e) {
+			Throwable cause = e.getCause();
+			if (cause instanceof ResourceException) {
+				throw (ResourceException)cause;
+			} else {
+				throw new ResourceException("Unexpected exception caught", cause);
+			}
+		}
+	}
+
 	private static TCPConnection check(Object obj) throws ResourceException {
 		if (!(obj instanceof TCPConnection)) {
 			throw new ResourceAdapterInternalException("Object allocated from ConnectionManager is not TCP Connection");
 		}
 		return (TCPConnection)obj;
+	}
+
+	private interface ConnectionSupplier {
+		TCPConnection get() throws ResourceException;
 	}
 }
