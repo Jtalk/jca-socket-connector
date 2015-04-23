@@ -114,10 +114,10 @@ public class TCPManager implements Closeable {
 
 	public void send(long id, ByteBuffer data) throws ResourceException {
 		ConnectionContext ctx = this.connections.get(id);
-		Channel output = ctx.channel;
-		if (output == null) {
+		if (ctx == null) {
 			throw new ConnectionClosedException("Connection is closed");
 		}
+		Channel output = ctx.channel;
 		log.finest(String.format("Data sending to id %d, %d bytes", id, data.remaining()));
 		output.writeAndFlush(Unpooled.wrappedBuffer(data)).addListener(f -> {
 			if (f.isSuccess()) {
