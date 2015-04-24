@@ -207,7 +207,12 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		this.clientID = request.getUid();
 		this.ID = request.getId();
-		this.listening = this.adapter.isTCPListener(request.getUid(), request.getId());
+		this.listening = false;
+		try {
+			this.adapter.isTCPListener(request.getUid(), request.getId());
+		} catch (ResourceException e) {
+			// Suppressed
+		}
 		if (this.isRunning.getAndSet(true)) {
 			log.severe("Managed connection reset while being running");
 		}
