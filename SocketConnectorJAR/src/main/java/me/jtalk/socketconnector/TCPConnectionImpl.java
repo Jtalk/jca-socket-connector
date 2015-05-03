@@ -19,9 +19,11 @@ package me.jtalk.socketconnector;
 
 import me.jtalk.socketconnector.api.TCPConnection;
 import java.nio.ByteBuffer;
+import java.util.logging.Logger;
 import javax.resource.ResourceException;
 
 public class TCPConnectionImpl implements TCPConnection {
+	private static final Logger LOG = Logger.getLogger(TCPConnectionImpl.class.getName());
 
 	private ManagedTCPConnectionProxy owner;
 
@@ -60,6 +62,8 @@ public class TCPConnectionImpl implements TCPConnection {
 		ManagedTCPConnectionProxy local = this.owner;
 		if (local != null) {
 			local.requestCleanup();
+		} else {
+			LOG.warning("Calling TCPConnection.close on detached connection");
 		}
 	}
 
