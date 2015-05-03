@@ -42,7 +42,7 @@ import javax.validation.groups.Default;
 
 public class ManagedTCPConnectionProxy implements ManagedConnection {
 
-	private static final Logger log = Logger.getLogger(ManagedTCPConnectionProxy.class.getName());
+	private static final Logger LOG = Logger.getLogger(ManagedTCPConnectionProxy.class.getName());
 
 	private long ID = 0;
 	private long clientID = 0;
@@ -74,7 +74,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	public void disconnect() throws ResourceException {
 
-		log.finer("Connection disconnect requested");
+		LOG.finer("Connection disconnect requested");
 
 		this.cleanup();
 		this.adapter.closeTCPConnection(this.clientID, this.ID);
@@ -105,20 +105,20 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	@Override
 	public void destroy() throws ResourceException {
-		log.log(Level.FINEST, "Connection destroyal requested");
+		LOG.log(Level.FINEST, "Connection destroyal requested");
 		this.disconnect();
 	}
 
 	@Override
 	public void cleanup() throws ResourceException {
-		log.log(Level.FINEST, "Connection cleanup requested");
+		LOG.log(Level.FINEST, "Connection cleanup requested");
 		this.replaceActiveConnection(null);
 		this.isRunning.set(false);
 	}
 
 	@Override
 	public void associateConnection(Object connection) throws ResourceException {
-		log.finer("Connection association replacement requested");
+		LOG.finer("Connection association replacement requested");
 		if (!(connection instanceof TCPConnectionImpl)) {
 			throw new ResourceException("Connection supplied is not a TCPConnectionImpl");
 		}
@@ -126,7 +126,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		TCPConnectionImpl newConnection = (TCPConnectionImpl)connection;
 		newConnection.reassign(this);
 		this.replaceActiveConnection(newConnection);
-		log.finer("Connection association replacement completed");
+		LOG.finer("Connection association replacement completed");
 	}
 
 	@Override
@@ -185,7 +185,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	final void reset(NewTCPConnectionRequest request) throws ResourceException {
 
-		log.finer("Resetting managed connection proxy for new connection");
+		LOG.finer("Resetting managed connection proxy for new connection");
 
 		this.validateInfo(request);
 
@@ -197,13 +197,13 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 			this.ID = this.adapter.createTCPConnection(this.clientID, request.createInetAddress());
 		}
 		if (this.isRunning.getAndSet(true)) {
-			log.severe("Managed connection reset while being running");
+			LOG.severe("Managed connection reset while being running");
 		}
 	}
 
 	final void reset(ExistingTCPConnectionRequest request) throws ResourceException {
 
-		log.finer("Resetting managed connection proxy for existing connection");
+		LOG.finer("Resetting managed connection proxy for existing connection");
 
 		this.clientID = request.getUid();
 		this.ID = request.getId();
@@ -214,13 +214,13 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 			// Suppressed
 		}
 		if (this.isRunning.getAndSet(true)) {
-			log.severe("Managed connection reset while being running");
+			LOG.severe("Managed connection reset while being running");
 		}
 	}
 
 	private void replaceActiveConnection(TCPConnectionImpl newConnection) {
 
-		log.fine(String.format("Connection replacing request"));
+		LOG.fine(String.format("Connection replacing request"));
 
 		TCPConnectionImpl old = this.connection.getAndSet(newConnection);
 		if (old != null) {
