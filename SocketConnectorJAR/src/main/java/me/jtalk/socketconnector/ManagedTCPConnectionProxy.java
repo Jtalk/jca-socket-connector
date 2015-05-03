@@ -76,7 +76,6 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		LOG.finer("Connection disconnect requested");
 
-		this.cleanup();
 		this.adapter.closeTCPConnection(this.clientID, this.ID);
 	}
 
