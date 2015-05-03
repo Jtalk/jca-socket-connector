@@ -230,7 +230,15 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	}
 
 	private void notifyEvent(ConnectionEvent event, final BiConsumer<ConnectionEventListener, ConnectionEvent> method) {
-		this.eventListeners.forEach(l -> method.accept(l, event));
+		if (this.eventListeners.isEmpty()) {
+			LOG.log(Level.SEVERE, "Sending event {0} to empty listeners set", event.getId());
+			return;
+		}
+
+		this.eventListeners.forEach(l -> {
+			LOG.log(Level.FINEST, "Sending event {0} to listener", event.getId());
+			method.accept(l, event);
+		});
 	}
 
 	private void validateInfo(NewTCPConnectionRequest info) throws ResourceException {
