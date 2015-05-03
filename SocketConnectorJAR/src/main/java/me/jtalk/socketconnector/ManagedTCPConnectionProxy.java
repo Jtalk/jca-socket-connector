@@ -176,6 +176,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	void requestCleanup() throws ResourceException {
 		TCPConnectionImpl conn = this.connection.get();
 		if (conn == null) {
+			LOG.warning("Cleanup requested without connection associated");
 			return;
 		}
 		final ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED);
