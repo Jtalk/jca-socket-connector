@@ -61,7 +61,7 @@
 				<configuration>
 					<archive>
 						<manifestEntries>
-							<Dependencies>me.jtalk.socketconnector.api, io.netty</Dependencies>
+							<Dependencies>io.netty, deployment.SocketConnectorAPI-1.0.jar</Dependencies>
 						</manifestEntries>
 					</archive>
 				</configuration>
