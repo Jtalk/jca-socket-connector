@@ -10,12 +10,17 @@
 		<module>SocketConnectorRAR</module>
 		<module>SocketConnectorJAR</module>
 		<module>SocketConnectorAPI</module>
+		<module>SocketConnectorTesterEAR</module>
+		<module>SocketConnectorTesterEJB</module>
 	</modules>
 	<scm>
 		<developerConnection>scm:hg:ssh://hg@bitbucket.org/__jtalk/socketconnector</developerConnection>
 		<connection>scm:hg:ssh://hg@bitbucket.org/__jtalk/socketconnector</connection>
 		<tag>HEAD</tag>
 	</scm>
+	<properties>
+		<socket.connector.api.version>1.0-SNAPSHOT</socket.connector.api.version>
+	</properties>
 	<build>
 		<plugins>
 			<plugin>
