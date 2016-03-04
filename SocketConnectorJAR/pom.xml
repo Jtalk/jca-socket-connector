@@ -9,7 +9,6 @@
 
 	<groupId>me.jtalk</groupId>
 	<artifactId>SocketConnectorJAR</artifactId>
-	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>SocketConnectorJAR</name>
@@ -61,7 +60,7 @@
 				<configuration>
 					<archive>
 						<manifestEntries>
-							<Dependencies>io.netty, deployment.SocketConnectorAPI-1.0.jar</Dependencies>
+							<Dependencies>io.netty, deployment.SocketConnectorAPI-${project.version}.jar</Dependencies>
 						</manifestEntries>
 					</archive>
 				</configuration>
