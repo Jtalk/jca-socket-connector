@@ -22,7 +22,7 @@
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>SocketConnectorAPI</artifactId>
-			<version>${socket.connector.api.version}</version>
+			<version>${project.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -60,7 +60,7 @@
 				<configuration>
 					<archive>
 						<manifestEntries>
-							<Dependencies>io.netty, deployment.SocketConnectorAPI-${socket.connector.api.version}.jar</Dependencies>
+							<Dependencies>io.netty, deployment.SocketConnectorAPI-${project.version}.jar</Dependencies>
 						</manifestEntries>
 					</archive>
 				</configuration>
