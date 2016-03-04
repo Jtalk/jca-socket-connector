@@ -34,6 +34,14 @@
 				<artifactId>maven-rar-plugin</artifactId>
 				<version>2.4</version>
 			</plugin>
+			<plugin>
+				<groupId>org.wildfly.plugins</groupId>
+				<artifactId>wildfly-maven-plugin</artifactId>
+				<version>1.1.0.Alpha5</version>
+				<configuration>
+					<force>true</force>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
