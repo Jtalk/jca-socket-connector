@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>SocketConnector</artifactId>
 		<groupId>me.jtalk</groupId>
-		<version>1.0-SNAPSHOT</version>
+		<version>1.0</version>
 	</parent>
 
 	<groupId>me.jtalk</groupId>
