@@ -18,9 +18,6 @@
 		<connection>scm:hg:ssh://hg@bitbucket.org/__jtalk/socketconnector</connection>
 		<tag>HEAD</tag>
 	</scm>
-	<properties>
-		<socket.connector.api.version>1.0-SNAPSHOT</socket.connector.api.version>
-	</properties>
 	<build>
 		<plugins>
 			<plugin>
