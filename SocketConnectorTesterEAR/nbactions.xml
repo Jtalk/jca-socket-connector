@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>CUSTOM-Deploy</actionName>
+            <displayName>Deploy</displayName>
+            <preAction>build-with-dependencies</preAction>
+            <goals>
+                <goal>wildfly:deploy</goal>
+            </goals>
+        </action>
+    </actions>
