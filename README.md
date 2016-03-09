@@ -30,6 +30,8 @@ Here's the JBoss/WildFly deployment process:
 
 You can check your deployment validity by deploying a SocketConnectorTester EAR and taking a quick look into your logs. Tester will download a sample page and report whether everything is all right.
 
+Tester will start a listening socket at 0.0.0.0:23553 and connect to it. Thus it checks both incoming and outcoming interactions.
+
 # Usage #
 
 The main idea behind this connector is to hide non-EJB-compliant Netty IO networking model. Netty is a great networking engine, but Netty 4.x does not support ExecutorService-like thread pools. Since EJBs are not allowed to interact with non-EJB threads and ManagedExecutorService is the only way of thread pooling in managed environment, I needed some kind of a proxy between EJB environment and Netty threading model. 
