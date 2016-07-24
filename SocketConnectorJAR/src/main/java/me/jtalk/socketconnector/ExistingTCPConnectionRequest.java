@@ -17,8 +17,13 @@
 
 package me.jtalk.socketconnector;
 
+import java.util.Objects;
 import javax.resource.spi.ConnectionRequestInfo;
+import lombok.Getter;
+import lombok.ToString;
 
+@Getter
+@ToString
 public class ExistingTCPConnectionRequest implements ConnectionRequestInfo {
 
 	private final long uid;
@@ -29,16 +34,18 @@ public class ExistingTCPConnectionRequest implements ConnectionRequestInfo {
 		this.id = id;
 	}
 
-	public long getUid() {
-		return this.uid;
-	}
-
-	public long getId() {
-		return id;
-	}
-
+	/**
+	 * We cannot use Lombok's one because ConnectionRequestInfo explicitly
+	 * specifies this method, which confuses Lombok's generator.
+	 *
+	 * @param obj
+	 * @return
+	 */
 	@Override
 	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
 		if (obj == null) {
 			return false;
 		}
@@ -46,11 +53,23 @@ public class ExistingTCPConnectionRequest implements ConnectionRequestInfo {
 			return false;
 		}
 		final ExistingTCPConnectionRequest other = (ExistingTCPConnectionRequest) obj;
-		return this.id == other.id;
+		if (this.uid != other.uid) {
+			return false;
+		}
+		if (this.id != other.id) {
+			return false;
+		}
+		return true;
 	}
 
+	/**
+	 * We cannot use Lombok's one because ConnectionRequestInfo explicitly
+	 * specifies this method, which confuses Lombok's generator.
+	 *
+	 * @return
+	 */
 	@Override
 	public int hashCode() {
-		return Long.hashCode(this.id);
+		return Objects.hash(getId(), getUid());
 	}
 }

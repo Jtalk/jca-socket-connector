@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package me.jtalk.socketconnector;
 
 import java.net.InetSocketAddress;
@@ -23,9 +22,13 @@ import javax.resource.spi.ConnectionRequestInfo;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.ToString;
 import me.jtalk.socketconnector.validation.NetAddress;
 
-class NewTCPConnectionRequest implements ConnectionRequestInfo {
+@Getter
+@ToString
+public class NewTCPConnectionRequest implements ConnectionRequestInfo {
 
 	private final long uid;
 
@@ -46,26 +49,17 @@ class NewTCPConnectionRequest implements ConnectionRequestInfo {
 		this.listening = listening;
 	}
 
-	public long getUid() {
-		return this.uid;
-	}
-
-	public String getAddress() {
-		return address;
-	}
-
-	public int getPort() {
-		return port;
-	}
-
 	public InetSocketAddress createInetAddress() {
 		return new InetSocketAddress(this.address, this.port);
 	}
 
-	public boolean isListening() {
-		return this.listening;
-	}
-
+	/**
+	 * We cannot use Lombok's one because ConnectionRequestInfo explicitly
+	 * specifies this method, which confuses Lombok's generator.
+	 *
+	 * @param obj
+	 * @return
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {
@@ -87,12 +81,14 @@ class NewTCPConnectionRequest implements ConnectionRequestInfo {
 		return true;
 	}
 
+	/**
+	 * We cannot use Lombok's one because ConnectionRequestInfo explicitly
+	 * specifies this method, which confuses Lombok's generator.
+	 *
+	 * @return
+	 */
 	@Override
 	public int hashCode() {
-		int hash = 3;
-		hash = 97 * hash + Objects.hashCode(this.address);
-		hash = 97 * hash + this.port;
-		hash = 97 * hash + (this.listening ? 1 : 0);
-		return hash;
+		return Objects.hash(address, port, listening);
 	}
 }
