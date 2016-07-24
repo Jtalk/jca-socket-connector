@@ -17,6 +17,7 @@
 
 package me.jtalk.socketconnector;
 
+import me.jtalk.socketconnector.utils.ValidationUtils;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -37,9 +38,9 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionMetaData;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
-import javax.validation.ConstraintViolation;
-import javax.validation.groups.Default;
+import lombok.extern.slf4j.Slf4j;
 import me.jtalk.socketconnector.api.TCPConnection;
+import me.jtalk.socketconnector.utils.ConnectionRequestInfoUtils;
 
 public class ManagedTCPConnectionProxy implements ManagedConnection {
 
@@ -94,9 +95,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		if (!this.isRunning.get()) {
 			throw new ResourceException("Socket connection requested from disconnected managed connection");
 		}
-
-		this.checkInfo(cxRequestInfo);
-
+		ConnectionRequestInfoUtils.checkInfo(clientID, ID, cxRequestInfo);
 		TCPConnectionImpl conn = new TCPConnectionImpl(this);
 		this.replaceActiveConnection(conn);
 
@@ -188,7 +187,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		LOG.finer("Resetting managed connection proxy for new connection");
 
-		this.validateInfo(request);
+		ValidationUtils.validateInfo(adapter.getValidator(), this::printLog, request);
 
 		this.clientID = request.getUid();
 		this.listening = request.isListening();
@@ -241,34 +240,5 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		});
 	}
 
-	private void validateInfo(NewTCPConnectionRequest info) throws ResourceException {
-		Set<ConstraintViolation<NewTCPConnectionRequest>> violations = this.adapter.getValidator().validate(info, Default.class);
-		if (violations.isEmpty()) {
-			return;
-		}
 
-		for (ConstraintViolation<NewTCPConnectionRequest> violation : violations) {
-			String message = violation.getMessage();
-			this.printLog(message);
-		}
-
-		throw new ResourceException("Socket connection request info constraints violation failed");
-	}
-
-	private void checkInfo(ConnectionRequestInfo rawInfo) throws ResourceException {
-		if (rawInfo instanceof ExistingTCPConnectionRequest) {
-			ExistingTCPConnectionRequest request = (ExistingTCPConnectionRequest)rawInfo;
-			if (request.getUid() != this.clientID || request.getId() != this.ID) {
-				throw new ResourceException("Incompatible UID and ConnectionID supplied to managed connection");
-			}
-		} else if (rawInfo instanceof NewTCPConnectionRequest) {
-			NewTCPConnectionRequest request = (NewTCPConnectionRequest)rawInfo;
-			if (request.getUid() != this.clientID) {
-				throw new ResourceException("Incompatible UID supplied to managed connection");
-			}
-		} else {
-			throw new ResourceException(String.format("Incompatible connection request info type %s supplied to managed connection",
-				rawInfo.getClass().getCanonicalName()));
-		}
-	}
 }
