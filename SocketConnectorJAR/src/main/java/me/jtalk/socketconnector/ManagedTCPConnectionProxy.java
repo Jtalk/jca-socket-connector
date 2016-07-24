@@ -20,14 +20,9 @@ package me.jtalk.socketconnector;
 import me.jtalk.socketconnector.utils.ValidationUtils;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionEvent;
@@ -54,7 +49,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	private final AtomicReference<PrintWriter> logWriter = new AtomicReference<>(null);
 	private final AtomicReference<TCPConnectionImpl> connection = new AtomicReference<>(null);
-	private final Set<ConnectionEventListener> eventListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+	private final EventListeners eventListeners = new EventListeners();
 
 	private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -227,18 +222,4 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 			old.invalidate();
 		}
 	}
-
-	private void notifyEvent(ConnectionEvent event, final BiConsumer<ConnectionEventListener, ConnectionEvent> method) {
-		if (this.eventListeners.isEmpty()) {
-			LOG.log(Level.SEVERE, "Sending event {0} to empty listeners set", event.getId());
-			return;
-		}
-
-		this.eventListeners.forEach(l -> {
-			LOG.log(Level.FINEST, "Sending event {0} to listener", event.getId());
-			method.accept(l, event);
-		});
-	}
-
-
 }
