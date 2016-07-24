@@ -24,7 +24,6 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionManager;
-import javax.resource.spi.ResourceAdapterInternalException;
 
 public class TCPConnectionFactoryImpl implements TCPConnectionFactory {
 
@@ -76,13 +75,6 @@ public class TCPConnectionFactoryImpl implements TCPConnectionFactory {
 				throw new ResourceException("Unexpected exception caught", cause);
 			}
 		}
-	}
-
-	private static TCPConnection check(Object obj) throws ResourceException {
-		if (!(obj instanceof TCPConnection)) {
-			throw new ResourceAdapterInternalException("Object allocated from ConnectionManager is not TCP Connection");
-		}
-		return (TCPConnection)obj;
 	}
 
 	private interface ConnectionSupplier {
