@@ -13,6 +13,12 @@
 		<module>SocketConnectorTesterEAR</module>
 		<module>SocketConnectorTesterEJB</module>
 	</modules>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.8</java.version>
+		<maven.compiler.source>${java.version}</maven.compiler.source>
+		<maven.compiler.target>${java.version}</maven.compiler.target>
+	</properties>
 	<scm>
 		<developerConnection>scm:hg:ssh://hg@bitbucket.org/__jtalk/socketconnector</developerConnection>
 		<connection>scm:hg:ssh://hg@bitbucket.org/__jtalk/socketconnector</connection>
