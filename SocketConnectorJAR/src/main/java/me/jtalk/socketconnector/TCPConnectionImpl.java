@@ -30,7 +30,7 @@ public class TCPConnectionImpl implements TCPConnection, NamedIdObject {
 
 	private static final long NO_ID = -1L;
 
-	private ManagedTCPConnectionProxy owner;
+	private volatile ManagedTCPConnectionProxy owner;
 
 	public TCPConnectionImpl(ManagedTCPConnectionProxy owner) {
 		this.owner = owner;
