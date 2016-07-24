@@ -3,3 +3,10 @@ SocketConnectorJAR/target/*
 SocketConnectorRAR/target/*
 SocketConnectorAPI/target/*
 target/*
+.idea/*
+SocketConnector.iml
+SocketConnectorAPI/SocketConnectorAPI.iml
+SocketConnectorJAR/SocketConnectorJAR.iml
+SocketConnectorTesterEJB/SocketConnectorTesterEJB.iml
+SocketConnectorTesterEAR/SocketConnectorTesterEAR.iml
+SocketConnectorRAR/SocketConnectorRAR.iml
