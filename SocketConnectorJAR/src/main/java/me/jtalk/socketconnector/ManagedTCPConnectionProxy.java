@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.jtalk.socketconnector.api.TCPConnection;
 import me.jtalk.socketconnector.utils.ConnectionRequestInfoUtils;
 import me.jtalk.socketconnector.utils.ConnectorLogger;
+import static me.jtalk.socketconnector.utils.LazyLoggingUtils.*;
 import me.jtalk.socketconnector.utils.NamedIdObject;
 
 @Slf4j
@@ -72,7 +73,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection, NamedIdObje
 	}
 
 	public void disconnect() throws ResourceException {
-		LOG.finer("Connection disconnect requested");
+		lazyTrace(log, "Connection disconnect requested for {}", this::getName);
 		adapter.closeTCPConnection(clientId, id);
 	}
 
@@ -97,37 +98,38 @@ public class ManagedTCPConnectionProxy implements ManagedConnection, NamedIdObje
 
 	@Override
 	public void destroy() throws ResourceException {
-		LOG.log(Level.FINEST, "Connection destroyal requested");
+		lazyTrace(log, "Connection destroyal requested for {}", this::getName);
 		disconnect();
 	}
 
 	@Override
 	public void cleanup() throws ResourceException {
-		LOG.log(Level.FINEST, "Connection cleanup requested");
+		lazyTrace(log, "Connection cleanup requested for {}", this::getName);
 		replaceActiveConnection(null);
 		isRunning.set(false);
 	}
 
 	@Override
 	public void associateConnection(Object connection) throws ResourceException {
-		LOG.finer("Connection association replacement requested");
+		lazyTrace(log, "Connection association replacement requested for {}", this::getName);
 		if (!(connection instanceof TCPConnectionImpl)) {
 			throw new ResourceException("Connection supplied is not a TCPConnectionImpl");
 		}
-
 		TCPConnectionImpl newConnection = (TCPConnectionImpl) connection;
 		newConnection.reassign(this);
 		replaceActiveConnection(newConnection);
-		LOG.finer("Connection association replacement completed");
+		lazyTrace(log, "Connection association replaced for {}", this::getName);
 	}
 
 	@Override
 	public void addConnectionEventListener(ConnectionEventListener listener) {
+		lazyTrace(log, "Event listener ''{}'' added for {}", () -> listener,this::getName);
 		eventListeners.add(listener);
 	}
 
 	@Override
 	public void removeConnectionEventListener(ConnectionEventListener listener) {
+		lazyTrace(log, "Event listener ''{}'' removed for {}", () -> listener,this::getName);
 		eventListeners.remove(listener);
 	}
 
@@ -148,6 +150,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection, NamedIdObje
 
 	@Override
 	public void setLogWriter(PrintWriter out) throws ResourceException {
+		lazyTrace(log, "Print writer is set for {}", this::getName);
 		logWriter.setLogWriter(out);
 	}
 
@@ -163,9 +166,10 @@ public class ManagedTCPConnectionProxy implements ManagedConnection, NamedIdObje
 	}
 
 	public void requestCleanup() throws ResourceException {
+		lazyTrace(log, "Connection cleanup requested for {}", this::getName);
 		TCPConnectionImpl conn = connection.get();
 		if (conn == null) {
-			LOG.warning("Cleanup requested without connection associated");
+			log.warn("Cleanup requested without connection associated for {}", getName());
 			return;
 		}
 		final ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED);
@@ -174,11 +178,8 @@ public class ManagedTCPConnectionProxy implements ManagedConnection, NamedIdObje
 	}
 
 	public void reset(NewTCPConnectionRequest request) throws ResourceException {
-
-		LOG.finer("Resetting managed connection proxy for new connection");
-
+		lazyTrace(log, "Resetting managed connection proxy {} for a new connection: {}", this::getName, () -> request);
 		ValidationUtils.validateInfo(adapter.getValidator(), logWriter::printLog, request);
-
 		clientId = request.getUid();
 		listening = request.isListening();
 		if (request.isListening()) {
@@ -187,31 +188,31 @@ public class ManagedTCPConnectionProxy implements ManagedConnection, NamedIdObje
 			id = adapter.createTCPConnection(clientId, request.createInetAddress());
 		}
 		if (isRunning.getAndSet(true)) {
-			LOG.severe("Managed connection reset while being running");
+			log.error("Managed connection {}: reset while being run", getName());
 		}
 	}
 
 	public void reset(ExistingTCPConnectionRequest request) throws ResourceException {
-
-		LOG.finer("Resetting managed connection proxy for existing connection");
-
+		lazyTrace(log, "Resetting managed connection proxy {} for an existing connection: {}", this::getName, () -> request);
 		clientId = request.getUid();
 		id = request.getId();
 		listening = false;
 		try {
 			adapter.isTCPListener(request.getUid(), request.getId());
 		} catch (ResourceException e) {
+			lazyTrace(log, "Exception in adapter.isTCPListener invocation for {}", this::getName, () -> e);
 			// Suppressed
 		}
 		if (isRunning.getAndSet(true)) {
-			LOG.severe("Managed connection reset while being running");
+			log.error("Managed connection {}: reset while being run", getName());
 		}
 	}
 
 	protected void replaceActiveConnection(TCPConnectionImpl newConnection) {
-		LOG.fine(String.format("Connection replacing request"));
+		lazyTrace(log, "Connection replacing requested for {}", this::getName);
 		TCPConnectionImpl old = connection.getAndSet(newConnection);
 		if (old != null) {
+			lazyTrace(log, "Connection replace succeded for {}: old connection {} will be invalidated", this::getName, old::getName);
 			old.invalidate();
 		}
 	}
