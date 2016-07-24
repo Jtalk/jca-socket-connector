@@ -51,6 +51,7 @@ import javax.transaction.xa.XAResource;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import me.jtalk.socketconnector.api.UnknownClientException;
+import org.apache.commons.lang3.reflect.MethodUtils;
 
 @Connector(
 	displayName = Metadata.NAME,
@@ -75,13 +76,9 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	private final Validator validator;
 
 	static {
-		try {
-			TCP_MESSAGE_INIT_METHOD = TCPMessageListener.class.getMethod("initialized");
-			TCP_MESSAGE_DATA_METHOD = TCPMessageListener.class.getMethod("onMessage", TCPMessage.class);
-			TCP_MESSAGE_DISCONNECT_METHOD = TCPMessageListener.class.getMethod("disconnected", TCPDisconnectionNotification.class);
-		} catch (NoSuchMethodException e) {
-			throw new RuntimeException("Methods initialized, onMessage or disconnected not found in TCPMessageListener, poor refactoring?", e);
-		}
+		TCP_MESSAGE_INIT_METHOD = MethodUtils.getAccessibleMethod(TCPMessageListener.class, "initialized");
+		TCP_MESSAGE_DATA_METHOD = MethodUtils.getAccessibleMethod(TCPMessageListener.class, "onMessage", TCPMessage.class);
+		TCP_MESSAGE_DISCONNECT_METHOD = MethodUtils.getAccessibleMethod(TCPMessageListener.class, "disconnected", TCPDisconnectionNotification.class);
 	}
 
 	public SocketResourceAdapter() throws IOException {
