@@ -53,16 +53,14 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
-	ManagedTCPConnectionProxy(SocketResourceAdapter adapter, NewTCPConnectionRequest info) throws ResourceException {
-
+	public ManagedTCPConnectionProxy(SocketResourceAdapter adapter, NewTCPConnectionRequest info) throws ResourceException {
 		this.adapter = adapter;
-		this.reset(info);
+		reset(info);
 	}
 
-	ManagedTCPConnectionProxy(SocketResourceAdapter adapter, ExistingTCPConnectionRequest info) throws ResourceException {
-
+	public ManagedTCPConnectionProxy(SocketResourceAdapter adapter, ExistingTCPConnectionRequest info) throws ResourceException {
 		this.adapter = adapter;
-		this.reset(info);
+		reset(info);
 	}
 
 	public long getId() {
@@ -167,8 +165,8 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 	}
 
-	void requestCleanup() throws ResourceException {
-		TCPConnectionImpl conn = this.connection.get();
+	public void requestCleanup() throws ResourceException {
+		TCPConnectionImpl conn = connection.get();
 		if (conn == null) {
 			LOG.warning("Cleanup requested without connection associated");
 			return;
@@ -178,7 +176,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		eventListeners.notifyEvent(event, ConnectionEventListener::connectionClosed);
 	}
 
-	final void reset(NewTCPConnectionRequest request) throws ResourceException {
+	public void reset(NewTCPConnectionRequest request) throws ResourceException {
 
 		LOG.finer("Resetting managed connection proxy for new connection");
 
@@ -196,7 +194,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 	}
 
-	final void reset(ExistingTCPConnectionRequest request) throws ResourceException {
+	public void reset(ExistingTCPConnectionRequest request) throws ResourceException {
 
 		LOG.finer("Resetting managed connection proxy for existing connection");
 
@@ -213,7 +211,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 	}
 
-	private void replaceActiveConnection(TCPConnectionImpl newConnection) {
+	protected void replaceActiveConnection(TCPConnectionImpl newConnection) {
 
 		LOG.fine(String.format("Connection replacing request"));
 
