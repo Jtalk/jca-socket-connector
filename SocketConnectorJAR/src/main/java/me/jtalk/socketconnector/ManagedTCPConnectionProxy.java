@@ -175,7 +175,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 		}
 		final ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED);
 		event.setConnectionHandle(conn);
-		this.notifyEvent(event, ConnectionEventListener::connectionClosed);
+		eventListeners.notifyEvent(event, ConnectionEventListener::connectionClosed);
 	}
 
 	final void reset(NewTCPConnectionRequest request) throws ResourceException {
