@@ -23,7 +23,6 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>javax</groupId>
@@ -46,7 +45,7 @@
 				<configuration>
 					<archive>
 						<manifestEntries>
-							<Dependencies>io.netty, deployment.SocketConnectorAPI-${project.version}.jar</Dependencies>
+							<Dependencies>deployment.SocketConnectorAPI-${project.version}.jar</Dependencies>
 						</manifestEntries>
 					</archive>
 				</configuration>
