@@ -36,6 +36,8 @@ import javax.transaction.xa.XAResource;
 import lombok.extern.slf4j.Slf4j;
 import me.jtalk.socketconnector.api.TCPConnection;
 import me.jtalk.socketconnector.utils.ConnectionRequestInfoUtils;
+import me.jtalk.socketconnector.utils.ConnectorLogger;
+import me.jtalk.socketconnector.utils.NamedIdObject;
 
 public class ManagedTCPConnectionProxy implements ManagedConnection {
 
@@ -47,7 +49,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	private final SocketResourceAdapter adapter;
 
-	private final AtomicReference<PrintWriter> logWriter = new AtomicReference<>(null);
+	private final ConnectorLogger logWriter = new ConnectorLogger();
 	private final AtomicReference<TCPConnectionImpl> connection = new AtomicReference<>(null);
 	private final EventListeners eventListeners = new EventListeners();
 
@@ -148,21 +150,12 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 	@Override
 	public void setLogWriter(PrintWriter out) throws ResourceException {
-		if (!this.logWriter.compareAndSet(null, out)) {
-			throw new javax.resource.spi.IllegalStateException("LogWriter is set more than once");
-		}
+		logWriter.setLogWriter(out);
 	}
 
 	@Override
 	public PrintWriter getLogWriter() throws ResourceException {
-		return this.logWriter.get();
-	}
-
-	public void printLog(String message) {
-		PrintWriter writer = this.logWriter.get();
-		if (writer != null) {
-			writer.print(message);
-		}
+		return logWriter.getLogWriter();
 	}
 
 	public void requestCleanup() throws ResourceException {
@@ -180,7 +173,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 
 		LOG.finer("Resetting managed connection proxy for new connection");
 
-		ValidationUtils.validateInfo(adapter.getValidator(), this::printLog, request);
+		ValidationUtils.validateInfo(adapter.getValidator(), logWriter::printLog, request);
 
 		this.clientID = request.getUid();
 		this.listening = request.isListening();
