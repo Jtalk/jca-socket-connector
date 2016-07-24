@@ -18,24 +18,23 @@
 package me.jtalk.socketconnector;
 
 import me.jtalk.socketconnector.api.TCPMessageListener;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
-import javax.resource.ResourceException;
 import javax.resource.spi.Activation;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.ConfigProperty;
 import javax.resource.spi.InvalidPropertyException;
 import javax.resource.spi.ResourceAdapter;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import me.jtalk.socketconnector.validation.NetAddress;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Activation(messageListeners = {TCPMessageListener.class})
 public class TCPActivationSpec implements ActivationSpec {
 
 	private static final Logger log = Logger.getLogger(TCPActivationSpec.class.getName());
 
-	private final AtomicReference<ResourceAdapter> adapter = new AtomicReference<>();
+	private volatile ResourceAdapter resourceAdapter;
 
 	@ConfigProperty(
 		description = "Unique connection pool identifier. This value is used "
@@ -72,58 +71,6 @@ public class TCPActivationSpec implements ActivationSpec {
 
 	@Override
 	public void validate() throws InvalidPropertyException {
-
-	}
-
-	@Override
-	public void setResourceAdapter(ResourceAdapter ra) throws ResourceException {
-		if (!this.adapter.compareAndSet(null, ra)) {
-			throw new ResourceException("Adapter must be set only once");
-		}
-	}
-
-	@Override
-	public ResourceAdapter getResourceAdapter() {
-		return this.adapter.get();
-	}
-
-	public Long getClientId() {
-		return clientId;
-	}
-
-	public void setClientId(Long clientId) {
-		this.clientId = clientId;
-	}
-
-	public Boolean isKeepalive() {
-		return keepalive;
-	}
-
-	public void setKeepalive(Boolean keepalive) {
-		this.keepalive = keepalive;
-	}
-
-	public Integer getListnerThreadsCount() {
-		return listnerThreadsCount;
-	}
-
-	public void setListnerThreadsCount(Integer listnerThreadsCount) {
-		this.listnerThreadsCount = listnerThreadsCount;
-	}
-
-	public Integer getReceiverThreadsCount() {
-		return receiverThreadsCount;
-	}
-
-	public void setReceiverThreadsCount(Integer receiverThreadsCount) {
-		this.receiverThreadsCount = receiverThreadsCount;
-	}
-
-	public Integer getBacklog() {
-		return backlog;
-	}
-
-	public void setBacklog(Integer backlog) {
-		this.backlog = backlog;
+		// Nothing to validate here
 	}
 }
