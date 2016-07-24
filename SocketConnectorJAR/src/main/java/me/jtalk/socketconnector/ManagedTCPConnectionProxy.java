@@ -39,6 +39,7 @@ import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
 import javax.validation.ConstraintViolation;
 import javax.validation.groups.Default;
+import me.jtalk.socketconnector.api.TCPConnection;
 
 public class ManagedTCPConnectionProxy implements ManagedConnection {
 
@@ -88,7 +89,7 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	}
 
 	@Override
-	public Object getConnection(Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
+	public TCPConnection getConnection(Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
 
 		if (!this.isRunning.get()) {
 			throw new ResourceException("Socket connection requested from disconnected managed connection");
