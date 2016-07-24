@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package me.jtalk.socketconnector;
 
 import me.jtalk.socketconnector.utils.ValidationUtils;
@@ -33,6 +32,7 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionMetaData;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.jtalk.socketconnector.api.TCPConnection;
 import me.jtalk.socketconnector.utils.ConnectionRequestInfoUtils;
@@ -41,12 +41,16 @@ import me.jtalk.socketconnector.utils.NamedIdObject;
 
 public class ManagedTCPConnectionProxy implements ManagedConnection {
 
-	private static final Logger LOG = Logger.getLogger(ManagedTCPConnectionProxy.class.getName());
+	@Getter
+	private long id = 0;
 
-	private long ID = 0;
-	private long clientID = 0;
+	@Getter
+	private long clientId = 0;
+
+	@Getter
 	private boolean listening = false;
 
+	@Getter
 	private final SocketResourceAdapter adapter;
 
 	private final ConnectorLogger logWriter = new ConnectorLogger();
@@ -63,10 +67,6 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	public ManagedTCPConnectionProxy(SocketResourceAdapter adapter, ExistingTCPConnectionRequest info) throws ResourceException {
 		this.adapter = adapter;
 		reset(info);
-	}
-
-	public long getId() {
-		return this.ID;
 	}
 
 	public void disconnect() throws ResourceException {
@@ -117,9 +117,9 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 			throw new ResourceException("Connection supplied is not a TCPConnectionImpl");
 		}
 
-		TCPConnectionImpl newConnection = (TCPConnectionImpl)connection;
+		TCPConnectionImpl newConnection = (TCPConnectionImpl) connection;
 		newConnection.reassign(this);
-		this.replaceActiveConnection(newConnection);
+		replaceActiveConnection(newConnection);
 		LOG.finer("Connection association replacement completed");
 	}
 
@@ -156,6 +156,12 @@ public class ManagedTCPConnectionProxy implements ManagedConnection {
 	@Override
 	public PrintWriter getLogWriter() throws ResourceException {
 		return logWriter.getLogWriter();
+	}
+
+	@Override
+	public String toString() {
+		return MessageFormat.format("{0}: [id=''{1}'', clientId=''{2}'', listening=''{3}'']",
+				super.toString(), getId(), getClientId(), isListening());
 	}
 
 	public void requestCleanup() throws ResourceException {
