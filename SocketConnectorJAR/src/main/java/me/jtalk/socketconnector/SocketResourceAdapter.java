@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package me.jtalk.socketconnector;
 
 import me.jtalk.socketconnector.api.TCPMessageImpl;
@@ -50,29 +49,32 @@ import javax.resource.spi.work.WorkManager;
 import javax.transaction.xa.XAResource;
 import javax.validation.Validation;
 import javax.validation.Validator;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import me.jtalk.socketconnector.api.UnknownClientException;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
+@Slf4j
 @Connector(
-	displayName = Metadata.NAME,
-	description = Metadata.DESCRIPTION,
-	vendorName = Metadata.VENDOR,
-	eisType = Metadata.EIS_TYPE,
-	version = Metadata.VERSION,
-	transactionSupport = TransactionSupport.TransactionSupportLevel.NoTransaction
+		displayName = Metadata.NAME,
+		description = Metadata.DESCRIPTION,
+		vendorName = Metadata.VENDOR,
+		eisType = Metadata.EIS_TYPE,
+		version = Metadata.VERSION,
+		transactionSupport = TransactionSupport.TransactionSupportLevel.NoTransaction
 )
 public class SocketResourceAdapter implements ResourceAdapter {
 
-	private static final Logger log = Logger.getLogger(SocketResourceAdapter.class.getName());
 	private static final Method TCP_MESSAGE_INIT_METHOD;
 	private static final Method TCP_MESSAGE_DATA_METHOD;
 	private static final Method TCP_MESSAGE_DISCONNECT_METHOD;
 
-	private WorkManager workManager;
+	private volatile WorkManager workManager;
 
 	private final AtomicBoolean running = new AtomicBoolean(false);
 	private final ConcurrentHashMap<Long, TCPManagerStorage> tcpManagers = new ConcurrentHashMap<>();
 
+	@Getter
 	private final Validator validator;
 
 	static {
@@ -83,8 +85,8 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	public SocketResourceAdapter() throws IOException {
 		this.validator = Validation.buildDefaultValidatorFactory().getValidator();
-		log.info(String.format("Soccket resource adapter is instantiated: validator is %s", this.validator == null ? "null" : "instantiated"));
-		log.finest("Verbose logging is enabled");
+		log.info("Socket resource adapter is instantiated: validator is {}", this.validator == null ? "null" : "instantiated");
+		log.trace("Verbose logging is enabled");
 	}
 
 	@Override
@@ -106,35 +108,32 @@ public class SocketResourceAdapter implements ResourceAdapter {
 
 	@Override
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) throws ResourceException {
-		log.log(Level.INFO, "Endpoint activation request received for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
+		log.info("Endpoint activation request received for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		if (!this.running.get()) {
 			throw new ResourceException("This resource adapter is stopped");
 		}
 		if (!(spec instanceof TCPActivationSpec)) {
 			throw new NotSupportedException("Activation spec supplied has unsupported type " + spec.getClass().getCanonicalName());
-		}
-		else
-		{
-			this.activateTCP(endpointFactory, (TCPActivationSpec)spec);
-			log.log(Level.INFO, "Endpoint activated for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
+		} else {
+			log.info("Endpoint activation for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
+			this.activateTCP(endpointFactory, (TCPActivationSpec) spec);
+			log.info("Endpoint activated for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		}
 	}
 
 	@Override
 	public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
-		log.log(Level.INFO, "Endpoint deactivation request received for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
+		log.info("Endpoint deactivation request received for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		if (!this.running.get()) {
-			log.warning("Endpoint deactivation called on disabled resource adapter");
+			log.error("Endpoint deactivation called on disabled resource adapter");
 			return;
 		}
 		if (!(spec instanceof TCPActivationSpec)) {
-			log.warning("Endpoint deactivation called with invalid ActivationSpec type");
-		}
-		else
-		{
-			log.log(Level.INFO, "Endpoint deactivation for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
-			this.deactivateTCP(endpointFactory, (TCPActivationSpec)spec);
-			log.log(Level.INFO, "Endpoint deactivated for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
+			log.error("Endpoint deactivation called with invalid ActivationSpec type");
+		} else {
+			log.info("Endpoint deactivation for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
+			this.deactivateTCP(endpointFactory, (TCPActivationSpec) spec);
+			log.info("Endpoint deactivated for class {0}", endpointFactory.getEndpointClass().getCanonicalName());
 		}
 	}
 
@@ -153,50 +152,38 @@ public class SocketResourceAdapter implements ResourceAdapter {
 		this.sendEndpoints(clientId, TCP_MESSAGE_DISCONNECT_METHOD, notification);
 	}
 
-	Validator getValidator() {
-		return this.validator;
-	}
-
-	long createTCPConnection(long clientId, InetSocketAddress target) throws ResourceException {
-
-		log.finest(String.format("TCP connection creation requested for client %d, address %s:%d",
-			clientId, target.getHostString(), target.getPort()));
-
+	public long createTCPConnection(long clientId, InetSocketAddress target) throws ResourceException {
+		log.trace("TCP connection creation requested for client ''{}'', address ''{}:{}''",
+				clientId, target.getHostString(), target.getPort());
 		TCPManager manager = this.getTCPManagerChecked(clientId);
 		return manager.connect(target);
 	}
 
-	long listenTCP(long clientId, InetSocketAddress local) throws ResourceException {
-
-		log.finest(String.format("TCP listening requested for client %d, address %s:%d",
-			clientId, local.getHostString(), local.getPort()));
-
+	public long listenTCP(long clientId, InetSocketAddress local) throws ResourceException {
+		log.trace("TCP listening requested for client ''{}'', address ''{}:{}''",
+				clientId, local.getHostString(), local.getPort());
 		TCPManager manager = this.getTCPManagerChecked(clientId);
 		return manager.listen(local);
 	}
 
-	void sendTCP(long clientId, long id, ByteBuffer data) throws ResourceException {
-
-		log.finest(String.format("TCP sending requested for client %d, id %d", clientId, id));
-
+	public void sendTCP(long clientId, long id, ByteBuffer data) throws ResourceException {
+		log.trace("TCP sending requested for client ''{}'', id ''{}''", clientId, id);
 		TCPManager manager = this.getTCPManagerChecked(clientId);
 		manager.send(id, data);
 	}
 
-	void closeTCPConnection(long clientId, long id) throws ResourceException {
-
-		log.finest(String.format("TCP closing requested for client %d, id %d", clientId, id));
-
+	public void closeTCPConnection(long clientId, long id) throws ResourceException {
+		log.trace("TCP closing requested for client ''{}'', id ''{}''", clientId, id);
 		TCPManager manager = this.getTCPManagerChecked(clientId);
 		manager.close(id);
 	}
 
-	boolean isTCPListener(long clientId, long id) throws ResourceException {
-
-		log.finest(String.format("TCP listening state requested for client %d, id %d", clientId, id));
-
+	public boolean isTCPListener(long clientId, long id) throws ResourceException {
+		log.trace("TCP listening state requested for client ''{}'', id ''{}''", clientId, id);
 		TCPManager manager = this.getTCPManagerChecked(clientId);
-		return manager.isListening(id);
+		boolean result = manager.isListening(id);
+		log.trace("TCP listening state for client ''{}'', id ''{}'' is {}", clientId, id, result);
+		return result;
 	}
 
 	@Override
@@ -210,70 +197,52 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	}
 
 	private void activateTCP(final MessageEndpointFactory factory, TCPActivationSpec spec) throws ResourceException {
-
 		long id = spec.getClientId();
-
-		log.finest(String.format("TCP activation for client %d: before lock", id));
-
-		synchronized(this.tcpManagers) {
-
-			log.finest(String.format("TCP activation for client %d: afteer lock", id));
-
+		log.trace("TCP activation for client ''{}'': before lock", id);
+		synchronized (this.tcpManagers) {
+			log.trace("TCP activation for client ''{}'': after lock", id);
 			TCPManagerStorage newStorage = new TCPManagerStorage();
 			TCPManagerStorage storage = this.tcpManagers.putIfAbsent(id, newStorage);
 			if (storage == null) {
-				log.finest(String.format("TCP activation for client %d: storage not found, inserting new", id));
-
+				log.trace("TCP activation for client ''{}'': storage not found, inserting new", id);
 				TCPManager manager = new TCPManager(this, id, spec);
 				newStorage.setManager(manager);
 				newStorage.setSpec(spec);
 				newStorage.addEndpoint(factory);
 			} else {
-				log.finest(String.format("TCP activation for client %d: storage not found, adding factory", id));
-
+				log.trace("TCP activation for client ''{}'': storage not found, adding factory", id);
 				storage.addEndpoint(factory);
 			}
 		}
-
 		this.workManager.scheduleWork(new SimpleWork(() -> this.sendEndpoint(factory, TCP_MESSAGE_INIT_METHOD, null)));
-
-		log.finest(String.format("TCP activation for client %d: initialization callback is scheduled", id));
+		log.trace("TCP activation for client ''{}'': initialization callback is scheduled", id);
 	}
 
 	private void deactivateTCP(MessageEndpointFactory factory, TCPActivationSpec spec) {
-
 		long id = spec.getClientId();
-
-		log.finest(String.format("TCP deactivation for client %d: before lock", id));
-
-		synchronized(this.tcpManagers) {
-
-			log.finest(String.format("TCP deactivation for client %d: after lock", id));
-
+		log.trace("TCP deactivation for client ''{}'': before lock", id);
+		synchronized (this.tcpManagers) {
+			log.trace("TCP deactivation for client ''{}'': after lock", id);
 			TCPManagerStorage storage = this.tcpManagers.get(id);
 			storage.removeEndpoint(factory);
 			if (storage.isEmpty()) {
-				log.finest(String.format("TCP deactivation for client %d: storage is empty, removing", id));
-
+				log.trace("TCP deactivation for client ''{}'': storage is empty, removing", id);
 				this.tcpManagers.remove(id);
 				TCPManager manager = storage.getManager();
 				if (manager != null) {
-					log.finest(String.format("TCP deactivation for client %d: manager is created, closing", id));
+					log.trace("TCP deactivation for client ''{}'': manager is created, closing", id);
 					manager.close();
 				} else {
-					log.finest(String.format("TCP deactivation for client %d: manager is null", id));
+					log.trace("TCP deactivation for client ''{}'': manager is null", id);
 				}
 			}
 		}
 	}
 
 	private void stopTCP() {
-		log.finest("TCP stopping: before lock");
-
-		synchronized(this.tcpManagers) {
-
-			log.finest("TCP stopping: after lock");
-
+		log.trace("TCP stopping: before lock");
+		synchronized (this.tcpManagers) {
+			log.trace("TCP stopping: after lock");
 			Iterator<Map.Entry<Long, TCPManagerStorage>> iter = this.tcpManagers.entrySet().iterator();
 			while (iter.hasNext()) {
 				TCPManagerStorage s = iter.next().getValue();
@@ -284,17 +253,16 @@ public class SocketResourceAdapter implements ResourceAdapter {
 				iter.remove();
 			}
 		}
-
-		log.finest("TCP stopping: stopped");
+		log.trace("TCP stopping: stopped");
 	}
 
 	private TCPManager getTCPManager(long clientId) {
 		TCPManagerStorage s = this.tcpManagers.get(clientId);
 		if (s == null) {
-			log.finest("TCP manager request: not found");
+			log.trace("TCP manager request: not found");
 			return null;
 		} else {
-			log.finest("TCP manager request: found");
+			log.trace("TCP manager request: found");
 			return s.getManager();
 		}
 	}
@@ -302,7 +270,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 	private <T> void sendEndpoints(long clientId, Method target, T message) {
 		TCPManagerStorage storage = this.tcpManagers.get(clientId);
 		if (storage == null) {
-			log.finer("Message sending requested for deactivated client");
+			log.trace("Message sending requested for deactivated client");
 			return;
 		}
 
@@ -317,7 +285,7 @@ public class SocketResourceAdapter implements ResourceAdapter {
 			MessageEndpoint endpoint = factory.createEndpoint(null);
 			endpoint.beforeDelivery(target);
 			try {
-				log.finer(String.format("Sending endpoint message to %s: prepare", target.getName()));
+				log.trace("Sending endpoint message to ''{}'': prepare", target.getName());
 
 				if (message == null) {
 					target.invoke(endpoint);
@@ -325,16 +293,16 @@ public class SocketResourceAdapter implements ResourceAdapter {
 					target.invoke(endpoint, message);
 				}
 
-				log.finer(String.format("Sending endpoint message to %s: sent", target.getName()));
+				log.trace("Sending endpoint message to ''{}'': sent", target.getName());
 			} catch (IllegalAccessException | InvocationTargetException e) {
-				log.log(Level.SEVERE, "Exception on message endpoint invocation", e);
+				log.error("Exception on message endpoint invocation", e);
 			}
 			endpoint.afterDelivery();
 			endpoint.release();
 		} catch (UnavailableException e) {
-			log.log(Level.SEVERE, "Message endpoint is unavailable", e);
+			log.error("Message endpoint is unavailable", e);
 		} catch (ResourceException | NoSuchMethodException e) {
-			log.log(Level.SEVERE, "Exception on message endpoint processing", e);
+			log.error("Exception on message endpoint processing", e);
 		}
 	}
 
