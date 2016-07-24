@@ -21,10 +21,7 @@ import me.jtalk.socketconnector.api.TCPConnectionFactory;
 import me.jtalk.socketconnector.api.TCPConnection;
 import java.io.PrintWriter;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionDefinition;
@@ -35,7 +32,11 @@ import javax.resource.spi.ManagedConnectionFactory;
 import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterAssociation;
 import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import me.jtalk.socketconnector.utils.ConnectorLogger;
 
+@Slf4j
 @ConnectionDefinition(
 	connection = TCPConnection.class,
 	connectionImpl = TCPConnectionImpl.class,
@@ -44,15 +45,15 @@ import javax.security.auth.Subject;
 )
 public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, ResourceAdapterAssociation {
 
-	private static final long serialVersionUID = 0L;
-	private static final Logger log = Logger.getLogger(ManagedTCPConnectionFactory.class.getName());
-	static final Metadata METADATA = new Metadata();
+	public static final Metadata METADATA = new Metadata();
 
-	private final AtomicReference<SocketResourceAdapter> adapter = new AtomicReference<>();
-	private final AtomicReference<PrintWriter> logWriter = new AtomicReference<>();
+	@Getter
+	private volatile SocketResourceAdapter resourceAdapter;
+
+	private final ConnectorLogger logWriter = new ConnectorLogger();
 
 	public ManagedTCPConnectionFactory() {
-		log.fine("Managed TCP connection factory instantiated");
+		log.trace("Managed TCP connection factory instantiated");
 	}
 
 	@Override
@@ -71,10 +72,10 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 	public ManagedConnection createManagedConnection(Subject subject, ConnectionRequestInfo cxRequestInfo) throws ResourceException {
 		log.info("Managed TCP connection factory received managed connection request");
 		if (cxRequestInfo instanceof NewTCPConnectionRequest) {
-			ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(this.adapter.get(), (NewTCPConnectionRequest)cxRequestInfo);
+			ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(resourceAdapter, (NewTCPConnectionRequest)cxRequestInfo);
 			return newConnection;
 		} else if (cxRequestInfo instanceof ExistingTCPConnectionRequest) {
-			ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(this.adapter.get(), (ExistingTCPConnectionRequest)cxRequestInfo);
+			ManagedTCPConnectionProxy newConnection = new ManagedTCPConnectionProxy(resourceAdapter, (ExistingTCPConnectionRequest)cxRequestInfo);
 			return newConnection;
 		} else {
 			throw new ResourceException("Info provided is not supported");
@@ -87,58 +88,31 @@ public class ManagedTCPConnectionFactory implements ManagedConnectionFactory, Re
 		if (!iter.hasNext()) {
 			return null;
 		}
-
-		try {
-			ManagedTCPConnectionProxy result = (ManagedTCPConnectionProxy)iter.next();
-			if (cxRequestInfo instanceof NewTCPConnectionRequest) {
-				result.reset((NewTCPConnectionRequest)cxRequestInfo);
-				return result;
-			} else if (cxRequestInfo instanceof ExistingTCPConnectionRequest) {
-				result.reset((ExistingTCPConnectionRequest)cxRequestInfo);
-				return result;
-			}
-
-		} catch (NoSuchElementException e) {}
-
-		return null;
+		ManagedTCPConnectionProxy result = (ManagedTCPConnectionProxy)iter.next();
+		if (cxRequestInfo instanceof NewTCPConnectionRequest) {
+			result.reset((NewTCPConnectionRequest)cxRequestInfo);
+			return result;
+		} else if (cxRequestInfo instanceof ExistingTCPConnectionRequest) {
+			result.reset((ExistingTCPConnectionRequest)cxRequestInfo);
+			return result;
+		} else {
+			return null;
+		}
 	}
-
-
 
 	@Override
 	public void setLogWriter(PrintWriter out) throws ResourceException {
-		if (!this.logWriter.compareAndSet(null, out)) {
-			throw new javax.resource.spi.IllegalStateException("LogWriter is set more than once");
-		}
+		logWriter.setLogWriter(out);
 	}
 
 	@Override
 	public PrintWriter getLogWriter() throws ResourceException {
-		return this.logWriter.get();
-	}
-
-	@Override
-	public SocketResourceAdapter getResourceAdapter() {
-		return this.adapter.get();
+		return logWriter.getLogWriter();
 	}
 
 	@Override
 	public void setResourceAdapter(ResourceAdapter ra) throws ResourceException {
-		log.info("Managed TCP connection factory received adapter assignment request");
-		if (!(ra instanceof SocketResourceAdapter)) {
-			throw new ResourceException("Resource adapter supplied to ManagedSocketConnectionFactory is not a SocketResourceAdapter");
-		}
-		SocketResourceAdapter newAdapter = (SocketResourceAdapter)ra;
-		if (!this.adapter.compareAndSet(null, newAdapter)) {
-			throw new javax.resource.spi.IllegalStateException("Resource adapter is applied more than once");
-		}
-	}
-
-	private void log(String message) {
-		PrintWriter writer = this.logWriter.get();
-		if (writer != null) {
-			writer.println(message);
-		}
+		resourceAdapter = (SocketResourceAdapter) ra;
 	}
 
 	@Override
