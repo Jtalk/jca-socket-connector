@@ -19,6 +19,7 @@ package me.jtalk.socketconnector;
 import me.jtalk.socketconnector.utils.ValidationUtils;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -39,7 +40,8 @@ import me.jtalk.socketconnector.utils.ConnectionRequestInfoUtils;
 import me.jtalk.socketconnector.utils.ConnectorLogger;
 import me.jtalk.socketconnector.utils.NamedIdObject;
 
-public class ManagedTCPConnectionProxy implements ManagedConnection {
+@Slf4j
+public class ManagedTCPConnectionProxy implements ManagedConnection, NamedIdObject {
 
 	@Getter
 	private long id = 0;
