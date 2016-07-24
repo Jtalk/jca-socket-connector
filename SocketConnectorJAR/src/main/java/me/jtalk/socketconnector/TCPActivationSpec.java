@@ -18,7 +18,6 @@
 package me.jtalk.socketconnector;
 
 import me.jtalk.socketconnector.api.TCPMessageListener;
-import java.util.logging.Logger;
 import javax.resource.spi.Activation;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.ConfigProperty;
@@ -31,8 +30,6 @@ import lombok.Setter;
 @Setter
 @Activation(messageListeners = {TCPMessageListener.class})
 public class TCPActivationSpec implements ActivationSpec {
-
-	private static final Logger log = Logger.getLogger(TCPActivationSpec.class.getName());
 
 	private volatile ResourceAdapter resourceAdapter;
 
