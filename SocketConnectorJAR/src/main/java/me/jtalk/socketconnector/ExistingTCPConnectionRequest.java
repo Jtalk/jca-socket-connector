@@ -38,8 +38,8 @@ public class ExistingTCPConnectionRequest implements ConnectionRequestInfo {
 	 * We cannot use Lombok's one because ConnectionRequestInfo explicitly
 	 * specifies this method, which confuses Lombok's generator.
 	 *
-	 * @param obj
-	 * @return
+	 * @param obj Object to check equality to.
+	 * @return Whether obj is equals this.
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -66,7 +66,7 @@ public class ExistingTCPConnectionRequest implements ConnectionRequestInfo {
 	 * We cannot use Lombok's one because ConnectionRequestInfo explicitly
 	 * specifies this method, which confuses Lombok's generator.
 	 *
-	 * @return
+	 * @return object's hash code
 	 */
 	@Override
 	public int hashCode() {

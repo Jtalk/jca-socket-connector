@@ -27,7 +27,7 @@ import org.slf4j.Logger;
  * time-consuming computations of it's arguments if a logging level specified is
  * disabled.
  *
- * @author Roman Nazarenko <me@jtalk.me>
+ * @author Roman Nazarenko &lt;me@jtalk.me&gt;
  */
 public class LazyLoggingUtils {
 
