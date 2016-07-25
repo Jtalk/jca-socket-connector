@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.jtalk</groupId>
 	<artifactId>SocketConnector</artifactId>
-	<version>1.3</version>
+	<version>1.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>SocketConnector</name>
 	<modules>
@@ -22,7 +22,7 @@
 	<scm>
 		<developerConnection>scm:hg:ssh://hg@bitbucket.org/__jtalk/socketconnector</developerConnection>
 		<connection>scm:hg:ssh://hg@bitbucket.org/__jtalk/socketconnector</connection>
-		<tag>SocketConnector-1.3</tag>
+		<tag>HEAD</tag>
 	</scm>
 	<dependencyManagement>
 		<dependencies>
